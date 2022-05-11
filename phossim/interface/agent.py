@@ -1,21 +1,9 @@
-import abc
+import gym
+from stable_baselines3.common.policies import BasePolicy
 
-import numpy as np
+from phossim.config import Config
 
 
-class AbstractAgent(abc.ABC):
-    def __init__(self, **kwargs):
-        self._action = None
-
-    @abc.abstractmethod
-    def step(self, state: np.ndarray, **kwargs):
-        pass
-
-    def get_current_action(self):
-        return self._action
-
-    def get_model(self):
-        pass
-
-    def train(self):
-        pass
+def get_agent(environment: gym.Env, config: Config) -> BasePolicy:
+    agent = config.agent_getter(environment, config.agent)
+    return agent

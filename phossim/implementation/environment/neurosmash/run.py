@@ -1,5 +1,5 @@
-from phossim.applications.neurosmash.environment import Environment
-from phossim.applications.neurosmash.agent import Agent, get_model, train
+from phossim.implementation.environment.neurosmash.environment import Environment
+from phossim.implementation.environment.neurosmash.agent import Agent, get_model, train
 
 if __name__ == '__main__':
 

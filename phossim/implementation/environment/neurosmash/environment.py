@@ -26,7 +26,7 @@ class Environment(AbstractEnvironment):
         self._client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._client.connect((self._ip, self._port))
 
-    def visualize(self):
+    def render(self):
         assert self._state is not None, "The environment.step() method must " \
                                         "be called before attempting to " \
                                         "visualize the state."
