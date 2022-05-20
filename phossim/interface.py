@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+import cv2
 import gym
 from gym.utils.env_checker import check_env
 from stable_baselines3.common.policies import BasePolicy
@@ -23,6 +24,7 @@ class Transform(gym.ObservationWrapper):
     def __init__(self, env, config: TransformConfig):
         super().__init__(env)
         self.config = config
+        self._ndarray_to_render = None
 
     def observation(self, observation):
         return observation
@@ -31,7 +33,12 @@ class Transform(gym.ObservationWrapper):
         observation, reward, done, info = super().step(action)
         observation = self.observation(observation)
         info[self.config.info_key] = observation
+        self._ndarray_to_render = observation
         return observation, reward, done, info
+
+    def render(self, mode="human", **kwargs):
+        if mode == 'rgb_array':
+            return cv2.cvtColor(self._ndarray_to_render, cv2.COLOR_GRAY2RGB)
 
 
 def wrap_transforms(environment: gym.Env, config: Config):

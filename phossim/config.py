@@ -42,7 +42,6 @@ class Config(AbstractConfig):
     environment_config: AbstractConfig
     transform_configs: List[Tuple[Type[Transform], TransformConfig]]
     agent_config: AbstractConfig
-    recording_config: AbstractConfig
     display_configs: List[Tuple[Type[Display], DisplayConfig]]
 
     filepath_output_data: pathlib.Path = None

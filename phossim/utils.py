@@ -18,11 +18,16 @@ class RecordingConfig(AbstractConfig):
     name_prefix: str = ''
 
 
+class RecordingTransform(RecordVideo):
+    def __init__(self, env, config: RecordingConfig):
+        env.metadata['render.modes'] = env.metadata['render_modes']
+        super().__init__(env, **asdict(config))
+
+
 def wrap_common(environment: gym.Env, config: Config) -> gym.Env:
     environment = TimeLimit(environment, config.max_episode_steps)
     environment = RecordEpisodeStatistics(
         environment, config.record_episode_statistics_deque_size)
     environment = Monitor(environment, config.monitor_filename,
                           info_keywords=config.info_keywords)
-    environment = RecordVideo(environment, **asdict(config.recording_config))
     return environment

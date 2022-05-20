@@ -16,7 +16,6 @@ class Pipeline:
         self.phosphene_simulator = None
         self.agent = None
         self.renderer = None
-        self.recorder = None
 
     def setup(self):
         self.renderer = get_renderer(self.config)
@@ -27,8 +26,9 @@ class Pipeline:
         self.is_alive = True
 
     def update(self, key):
-        self.config.apply_key(key)
-        self.setup()
+        if self.is_alive:
+            self.config.apply_key(key)
+            self.setup()
 
     def run(self):
         assert self.is_alive, "Call pipeline.setup() before running."
@@ -69,7 +69,6 @@ class Pipeline:
 
     def stop(self, key):
         self.environment.close()
-        self.recorder.close()
         if self._is_pipeline_done(key):
             self.renderer.stop()
             self.is_alive = False
