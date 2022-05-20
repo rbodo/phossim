@@ -1,9 +1,10 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 import cv2
 import gym
 from gym.utils.env_checker import check_env
-from stable_baselines3.common.policies import BasePolicy
+from stable_baselines3.common.base_class import BaseAlgorithm
 
 from phossim.config import Config, AbstractConfig
 
@@ -44,10 +45,15 @@ class Transform(gym.ObservationWrapper):
 def wrap_transforms(environment: gym.Env, config: Config):
     for transform_class, transform_config in config.transform_configs:
         environment = transform_class(environment, transform_config)
-        check_env(environment, skip_render_check=True)
+        check_env(environment, skip_render_check=False)
     return environment
 
 
-def get_agent(environment: gym.Env, config: Config) -> BasePolicy:
+@dataclass
+class AgentConfig(AbstractConfig):
+    path_model: Path
+
+
+def get_agent(environment: gym.Env, config: Config) -> BaseAlgorithm:
     agent = config.agent_getter(environment, config.agent_config)
     return agent

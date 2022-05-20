@@ -1,3 +1,4 @@
+from dataclasses import asdict
 from itertools import count
 
 from phossim.config import QUIT_KEY, Config
@@ -32,8 +33,6 @@ class Pipeline:
 
     def run(self):
         assert self.is_alive, "Call pipeline.setup() before running."
-
-        # self.agent.learn(int(1e8))
 
         key = None
         for i_episode in count():
@@ -74,7 +73,17 @@ class Pipeline:
             self.is_alive = False
 
 
-def main(config: Config):
+def train(config: Config):
+    pipeline = Pipeline(config)
+
+    pipeline.setup()
+
+    pipeline.agent.learn(**asdict(config.training_config))
+
+    pipeline.agent.save(config.agent_config.path_model)
+
+
+def evaluate(config: Config):
 
     pipeline = Pipeline(config)
 

@@ -1,15 +1,14 @@
 from __future__ import annotations
-import pathlib
 from dataclasses import dataclass
-from typing import Callable, Tuple, Optional, List, Type, TYPE_CHECKING
+from typing import Callable, Tuple, List, Type, TYPE_CHECKING
 
 import gym
-from stable_baselines3.common.policies import BasePolicy
+from stable_baselines3.common.base_class import BaseAlgorithm
 import torch
 
 if TYPE_CHECKING:
     from phossim.rendering import DisplayConfig, Display
-    from phossim.interface import Transform, TransformConfig
+    from phossim.interface import Transform, TransformConfig, AgentConfig
 
 USE_CUDA = False
 DEVICE = 'cuda:0' if USE_CUDA else 'cpu'
@@ -37,20 +36,16 @@ class Config(AbstractConfig):
     """
 
     environment_getter: Callable[[AbstractConfig], gym.Env]
-    agent_getter: Callable[[gym.Env, AbstractConfig], BasePolicy]
+    agent_getter: Callable[[gym.Env, ...], BaseAlgorithm]
 
     environment_config: AbstractConfig
     transform_configs: List[Tuple[Type[Transform], TransformConfig]]
-    agent_config: AbstractConfig
+    agent_config: AgentConfig
     display_configs: List[Tuple[Type[Display], DisplayConfig]]
+    training_config: AbstractConfig
 
-    filepath_output_data: pathlib.Path = None
-    seed: int = 42
     max_num_episodes: int = 100
     max_episode_steps: int = 100
-    record_episode_statistics_deque_size: int = 100
-    monitor_filename: Optional[str] = None
-    info_keywords: Tuple[str, ...] = ()
 
     def apply_key(self, key: int):
         pass

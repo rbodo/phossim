@@ -2,13 +2,13 @@ import sys
 from pathlib import Path
 
 from phossim.interface import Transform, TransformConfig
-from phossim.pipeline import main
+from phossim.pipeline import evaluate, train
 from phossim.config import Config
 from phossim.implementation.environment.openai_gym.environment import GymConfig
 from phossim.implementation.environment.openai_gym.atari.environment import \
     get_atari_environment, AtariConfig
 from phossim.implementation.agent.stable_baselines import get_agent, \
-    AgentConfig
+    StableBaselineAgentConfig, TrainingConfig
 from phossim.implementation.filtering.edge import CannyConfig, CannyFilter
 from phossim.implementation.phosphene_simulation.basic import \
     BasicPhospheneSimulationConfig, PhospheneSimulationBasic
@@ -20,9 +20,13 @@ if __name__ == '__main__':
     input_key = 'input'
     filter_key = 'filtered_observation'
     phosphene_key = 'phosphenes'
-    path_recording = Path('/home/rbodo/Data/phosphenes/atari/recording')
+    path_base = Path('~/Data/phosphenes/atari').expanduser()
+    path_recording = path_base.joinpath('recording')
+    path_tensorboard = path_base.joinpath('log')
+    path_model = path_base.joinpath('models/PPO_breakout')
+    path_model.parent.mkdir(exist_ok=True)
     video_length = 100
-    def recording_trigger(step): return step == 1
+    def recording_trigger(step): return step == 0
 
     environment_config = AtariConfig(
         GymConfig('ALE/Breakout-v5',
@@ -50,7 +54,8 @@ if __name__ == '__main__':
                                              name_prefix='phosphenes')),
     ]
 
-    agent_config = AgentConfig('PPO', 'MlpPolicy', {})
+    agent_config = StableBaselineAgentConfig(
+        path_model, 'PPO', 'MlpPolicy', {'tensorboard_log': path_tensorboard})
 
     display_configs = [
          (ScreenDisplay, DisplayConfig(input_key, input_key, 'gym')),
@@ -59,7 +64,7 @@ if __name__ == '__main__':
                                        'identity')),
     ]
 
-    filepath_output_data = Path('/home/rbodo/Data/phosphenes/atari')
+    training_config = TrainingConfig(int(1e8))
 
     config = Config(environment_getter=get_atari_environment,
                     agent_getter=get_agent,
@@ -67,8 +72,11 @@ if __name__ == '__main__':
                     transform_configs=transform_configs,
                     agent_config=agent_config,
                     display_configs=display_configs,
-                    filepath_output_data=filepath_output_data)
+                    training_config=training_config,
+                    )
 
-    main(config)
+    train(config)
+
+    evaluate(config)
 
     sys.exit()
