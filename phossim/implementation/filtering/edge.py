@@ -4,11 +4,11 @@ from typing import Union
 import numpy as np
 import cv2
 import gym
-from gym.core import ObservationWrapper
 
 from phossim.config import AbstractConfig
 from phossim.implementation.filtering.preprocessing import (
     PreprocessingConfig, PreprocessingFilter)
+from phossim.interface.filtering import FilteringWrapper
 
 
 @dataclass
@@ -44,7 +44,7 @@ def wrap_canny(environment: gym.Env,
     return environment
 
 
-class CannyFilter(ObservationWrapper):
+class CannyFilter(FilteringWrapper):
     def __init__(self,
                  env: gym.Env,
                  sigma: float,

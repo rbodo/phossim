@@ -1,8 +1,8 @@
 import numpy as np
 import torch
-from gym.core import ObservationWrapper
 
 from phossim.config import DTYPE, DEVICE
+from phossim.interface.phosphene_simulation import PhospheneWrapper
 
 
 def get_eccentricity_scaling(r):
@@ -41,7 +41,7 @@ def get_phosphene_map(num_phosphenes, resolution):
     return phosphene_map, torch.reshape(phosphene_sizes, (-1, 1, 1))
 
 
-class GaussianSimulator(ObservationWrapper):
+class GaussianSimulator(PhospheneWrapper):
     def __init__(self, env, config):
         """
         phosphene_map: ndarray

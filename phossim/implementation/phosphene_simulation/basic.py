@@ -4,9 +4,9 @@ from typing import Tuple, Union
 import cv2
 import gym
 import numpy as np
-from gym.core import ObservationWrapper
 
 from phossim.config import AbstractConfig
+from phossim.interface.phosphene_simulation import PhospheneWrapper
 
 
 @dataclass
@@ -55,7 +55,7 @@ def create_regular_grid(phosphene_resolution, size, jitter, intensity_var):
     return grid
 
 
-class PhospheneSimulationBasic(ObservationWrapper):
+class PhospheneSimulationBasic(PhospheneWrapper):
     def __init__(self, env: gym.Env, config: BasicPhospheneSimulationConfig):
         """Phosphene simulator class to create gaussian-based phosphene
         simulations from a stimulus pattern.

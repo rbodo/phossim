@@ -4,11 +4,11 @@ from typing import Union
 import gym
 import numpy as np
 import torch
-from gym.core import ObservationWrapper
 
 from phossim.config import DEVICE, DTYPE, AbstractConfig
 from phossim.implementation.phosphene_simulation.realistic import \
     get_phosphene_map
+from phossim.interface.stimulus_generation import StimulusWrapper
 
 
 @dataclass
@@ -20,17 +20,17 @@ class IdentityConfig(AbstractConfig):
 def wrap_stimulus_generation(environment: gym.Env,
                              config: Union[AbstractConfig,
                                            IdentityConfig]) -> gym.Env:
-    environment = IdentityWrapper(environment)
+    environment = IdentityStimulusGenerator(environment)
     return environment
 
 
-class IdentityWrapper(ObservationWrapper):
+class IdentityStimulusGenerator(StimulusWrapper):
     def observation(self, observation):
         return observation
 
 
-class StimulusWrapper(ObservationWrapper):
-    def __init__(self, env, config):
+class RealisticStimulusGenerator(StimulusWrapper):
+    def __init__(self, env: gym.Env, config):
         super().__init__(env)
         self.receptive_field_size = config.RECEPTIVE_FIELD_SIZE
         self.use_relative_receptive_field_size = \
