@@ -1,37 +1,28 @@
 from dataclasses import dataclass
-from typing import Union
 
 import gym
 import numpy as np
 import torch
 
-from phossim.config import DEVICE, DTYPE, AbstractConfig
+from phossim.config import DEVICE, DTYPE
 from phossim.implementation.phosphene_simulation.realistic import \
     get_phosphene_map
-from phossim.interface.stimulus_generation import StimulusWrapper
+from phossim.interface import Transform, TransformConfig
 
 
 @dataclass
-class IdentityConfig(AbstractConfig):
+class IdentityConfig(TransformConfig):
     pass
 
 
-# noinspection PyUnusedLocal
-def wrap_stimulus_generation(environment: gym.Env,
-                             config: Union[AbstractConfig,
-                                           IdentityConfig]) -> gym.Env:
-    environment = IdentityStimulusGenerator(environment)
-    return environment
-
-
-class IdentityStimulusGenerator(StimulusWrapper):
+class IdentityStimulusGenerator(Transform):
     def observation(self, observation):
         return observation
 
 
-class RealisticStimulusGenerator(StimulusWrapper):
-    def __init__(self, env: gym.Env, config):
-        super().__init__(env)
+class RealisticStimulusGenerator(Transform):
+    def __init__(self, env: gym.Env, config: TransformConfig):
+        super().__init__(env, config)
         self.receptive_field_size = config.RECEPTIVE_FIELD_SIZE
         self.use_relative_receptive_field_size = \
             config.USE_RELATIVE_RECEPTIVE_FIELD_SIZE

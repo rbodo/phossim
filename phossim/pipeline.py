@@ -1,12 +1,9 @@
 from itertools import count
 
 from phossim.config import QUIT_KEY, Config
-from phossim.interface.agent import get_agent
-from phossim.interface.environment import get_environment
-from phossim.interface.filtering import wrap_filtering
-from phossim.interface.phosphene_simulation import wrap_phosphene_simulation
-from phossim.interface.stimulus_generation import wrap_stimulus_generation
+from phossim.interface import get_agent, wrap_transforms, get_environment
 from phossim.utils import wrap_common
+from phossim.rendering import get_renderer
 
 
 class Pipeline:
@@ -22,13 +19,11 @@ class Pipeline:
         self.recorder = None
 
     def setup(self):
-        environment = get_environment(self.config)
-        environment = wrap_filtering(environment, self.config)
-        environment = wrap_stimulus_generation(environment, self.config)
-        environment = wrap_phosphene_simulation(environment, self.config)
-        environment = wrap_common(environment, self.config)
-        self.environment = environment
-        self.agent = get_agent(environment, self.config)
+        self.renderer = get_renderer(self.config)
+        self.environment = get_environment(self.config)
+        self.environment = wrap_transforms(self.environment, self.config)
+        self.environment = wrap_common(self.environment, self.config)
+        self.agent = get_agent(self.environment, self.config)
         self.is_alive = True
 
     def update(self, key):
@@ -47,13 +42,12 @@ class Pipeline:
 
             while True:
 
-                # self.environment.render()
-
                 action, state = self.agent.predict(observation)
 
                 observation, reward, done, info = self.environment.step(action)
 
-                # key = info['key']
+                key = self.renderer(info)
+
                 if self._is_episode_done(key, done):
                     break
 
@@ -74,7 +68,7 @@ class Pipeline:
         return key == ord(QUIT_KEY)
 
     def stop(self, key):
-        self.environment.stop()
+        self.environment.close()
         self.recorder.close()
         if self._is_pipeline_done(key):
             self.renderer.stop()

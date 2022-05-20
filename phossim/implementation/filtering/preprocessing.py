@@ -6,21 +6,20 @@ import numpy as np
 import gym
 from gym.core import ObservationWrapper
 
+from phossim.interface import TransformConfig
+
 
 @dataclass
-class PreprocessingConfig:
+class PreprocessingConfig(TransformConfig):
     target_size: Tuple[int, int]
     zoom: float = 1
 
 
 class PreprocessingFilter(ObservationWrapper):
-    def __init__(self,
-                 env: gym.Env,
-                 target_size: Tuple[int, int],
-                 zoom: float = 1):
+    def __init__(self, env: gym.Env, config: PreprocessingConfig):
         super().__init__(env)
-        self.target_size = target_size
-        self.zoom = zoom
+        self.target_size = config.target_size
+        self.zoom = config.zoom
 
     def observation(self, observation):
 

@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import Union
+from dataclasses import dataclass, field
+from typing import Union, Optional
 
 import gym
 from stable_baselines3.common.atari_wrappers import AtariWrapper
@@ -12,7 +12,7 @@ from phossim.implementation.environment.openai_gym.environment import \
 @dataclass
 class AtariConfig(AbstractConfig):
     gym_config: GymConfig
-    atari_kwargs: dict
+    atari_kwargs: Optional[dict] = field(default_factory=dict)
 
 
 def get_atari_environment(config: Union[AbstractConfig,

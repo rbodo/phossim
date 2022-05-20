@@ -18,22 +18,11 @@ class RecordingConfig(AbstractConfig):
     name_prefix: str = ''
 
 
-def wrap_common(environment: gym.Env, config: Config):
+def wrap_common(environment: gym.Env, config: Config) -> gym.Env:
     environment = TimeLimit(environment, config.max_episode_steps)
     environment = RecordEpisodeStatistics(
         environment, config.record_episode_statistics_deque_size)
     environment = Monitor(environment, config.monitor_filename,
                           info_keywords=config.info_keywords)
-    environment = RecordVideo(environment, **asdict(config.recording))
+    environment = RecordVideo(environment, **asdict(config.recording_config))
     return environment
-
-
-def add_observation_to_info(info_key):
-    def decorator(step):
-        def wrapped(self, action):
-            observation, reward, done, info = step(self, action)
-            observation = self.observation(observation)
-            info[info_key] = observation
-            return observation, reward, done, info
-        return wrapped
-    return decorator

@@ -1,16 +1,15 @@
 from dataclasses import dataclass
-from typing import Tuple, Union
+from typing import Tuple
 
 import cv2
 import gym
 import numpy as np
 
-from phossim.config import AbstractConfig
-from phossim.interface.phosphene_simulation import PhospheneWrapper
+from phossim.interface import Transform, TransformConfig
 
 
 @dataclass
-class BasicPhospheneSimulationConfig(AbstractConfig):
+class BasicPhospheneSimulationConfig(TransformConfig):
     image_size: Tuple[int, int]
     phosphene_resolution: Tuple[int, int] = (32, 32)
     phosphene_intensity: float = 8
@@ -19,16 +18,7 @@ class BasicPhospheneSimulationConfig(AbstractConfig):
     jitter: float = 0.4
     intensity_var: float = 0.8
     aperture: float = 0.66
-
-
-def wrap_phosphene_simulation(
-        environment: gym.Env,
-        config: Union[AbstractConfig,
-                      BasicPhospheneSimulationConfig]) -> gym.Env:
-
-    environment = PhospheneSimulationBasic(environment, config)
-
-    return environment
+    info_key = 'phosphenes'
 
 
 def create_regular_grid(phosphene_resolution, size, jitter, intensity_var):
@@ -55,7 +45,7 @@ def create_regular_grid(phosphene_resolution, size, jitter, intensity_var):
     return grid
 
 
-class PhospheneSimulationBasic(PhospheneWrapper):
+class PhospheneSimulationBasic(Transform):
     def __init__(self, env: gym.Env, config: BasicPhospheneSimulationConfig):
         """Phosphene simulator class to create gaussian-based phosphene
         simulations from a stimulus pattern.
@@ -67,7 +57,7 @@ class PhospheneSimulationBasic(PhospheneWrapper):
             The size parameter for the gaussian.
         """
 
-        super().__init__(env)
+        super().__init__(env, config)
         size = config.image_size
         phosphene_resolution = config.phosphene_resolution
         self.intensity = config.phosphene_intensity
