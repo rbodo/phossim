@@ -63,6 +63,6 @@ class NeurosmashEnv(gym.Env):
         done = data[0]
         reward = data[1]
         observation = data[2:]
-        self._state = np.array(observation, 'uint8').reshape(self._shape)
+        self._state = np.array(list(observation), 'uint8').reshape(self._shape)
 
         return observation, reward, done, {}

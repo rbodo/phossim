@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Callable, Tuple, List, Type, TYPE_CHECKING
+from typing import Callable, Tuple, List, Type, TYPE_CHECKING, Union
 
 import gym
 from stable_baselines3.common.base_class import BaseAlgorithm
@@ -40,7 +40,7 @@ class Config(AbstractConfig):
          51575931/class-inheritance-in-python-3-7-data
     """
 
-    environment_getter: Callable[[AbstractConfig], gym.Env]
+    environment_getter: Union[Type[gym.Env], Callable[[...], gym.Env]]
     agent_getter: Callable[[gym.Env, ...], BaseAlgorithm]
 
     environment_config: AbstractConfig

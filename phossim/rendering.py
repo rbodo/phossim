@@ -49,7 +49,7 @@ class ScreenDisplay(Display):
 
     def write_label_on_frame(self, frame: np.ndarray):
         if self._label is not None:
-            return cv2.putText(img=frame,
+            return cv2.putText(img=frame.copy(),
                                text=f'{self.name}: {self._label}',
                                org=(10, 20),
                                fontFace=cv2.FONT_HERSHEY_DUPLEX,

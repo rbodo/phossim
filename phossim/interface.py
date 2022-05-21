@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Union
 
 import cv2
 import gym
@@ -17,7 +18,7 @@ def get_environment(config: Config):
 
 @dataclass
 class TransformConfig(AbstractConfig):
-    info_key: str
+    info_key: Union[str, None]
 
 
 @dataclass
@@ -32,14 +33,17 @@ class Transform(gym.ObservationWrapper):
 
     def step(self, action):
         observation, reward, done, info = super().step(action)
-        observation = self.observation(observation)
         info[self.config.info_key] = observation
         self._ndarray_to_render = observation
         return observation, reward, done, info
 
     def render(self, mode="human", **kwargs):
         if mode == 'rgb_array':
-            return cv2.cvtColor(self._ndarray_to_render, cv2.COLOR_GRAY2RGB)
+            if self._ndarray_to_render.shape[-1] == 1:
+                return cv2.cvtColor(self._ndarray_to_render,
+                                    cv2.COLOR_GRAY2RGB)
+            else:
+                return self._ndarray_to_render
 
 
 def wrap_transforms(environment: gym.Env, config: Config):

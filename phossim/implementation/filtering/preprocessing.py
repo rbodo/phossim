@@ -4,9 +4,22 @@ from typing import Tuple
 import cv2
 import numpy as np
 import gym
-from gym.core import ObservationWrapper
 
-from phossim.interface import TransformConfig
+from phossim.interface import TransformConfig, Transform
+
+
+@dataclass
+class GreyscaleConfig(TransformConfig):
+    observation_space: gym.Space
+
+
+class GreyscaleTransform(Transform):
+    def __init__(self, env, config: GreyscaleConfig):
+        super().__init__(env, config)
+        self._observation_space = config.observation_space
+
+    def observation(self, observation):
+        return np.atleast_3d(cv2.cvtColor(observation, cv2.COLOR_BGR2GRAY))
 
 
 @dataclass
@@ -15,9 +28,9 @@ class PreprocessingConfig(TransformConfig):
     zoom: float = 1
 
 
-class PreprocessingFilter(ObservationWrapper):
+class PreprocessingFilter(Transform):
     def __init__(self, env: gym.Env, config: PreprocessingConfig):
-        super().__init__(env)
+        super().__init__(env, config)
         self.target_size = config.target_size
         self.zoom = config.zoom
 

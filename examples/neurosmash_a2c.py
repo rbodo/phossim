@@ -4,7 +4,7 @@ from pathlib import Path
 from phossim.interface import Transform, TransformConfig
 from phossim.pipeline import evaluate, train
 from phossim.config import Config
-from phossim.implementation.environment.neurosmash.neurosmash import \
+from phossim.implementation.environment.neurosmash import \
     NeurosmashConfig, get_neurosmash_environment
 from phossim.implementation.agent.stable_baselines import get_agent, \
     StableBaselineAgentConfig, TrainingConfig

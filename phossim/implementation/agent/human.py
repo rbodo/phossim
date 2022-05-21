@@ -145,3 +145,24 @@ class HumanAgentConfig(Config):
             assert phosphene_mode != PhospheneModes.realistic
         elif stimulus_mode == StimulusModes.realistic:
             self.modes[PHOSPHENE_KEY] = PhospheneModes.realistic
+
+
+class Agent:
+
+    def step(self, environment):
+        key = cv2.waitKey(0)
+        if key == ord('w'):
+            end, reward, state_raw = environment.step(0)
+            print(reward)
+
+        if key == ord('a'):
+            end, reward, state_raw = environment.step(1)
+            print(reward)
+
+        if key == ord('d'):
+            end, reward, state_raw = environment.step(2)
+            print(reward)
+
+        if key == ord('r'):
+            end, reward, state_raw = environment.reset()
+            print(reward)

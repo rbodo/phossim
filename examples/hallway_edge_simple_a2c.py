@@ -1,16 +1,21 @@
 import sys
 from pathlib import Path
 
+import gym
+import numpy as np
+
+from phossim.implementation.filtering.edge import CannyFilter, CannyConfig
+from phossim.implementation.filtering.preprocessing import \
+    GreyscaleTransform, GreyscaleConfig
+from phossim.implementation.phosphene_simulation.basic import \
+    PhospheneSimulationBasic, BasicPhospheneSimulationConfig
 from phossim.interface import Transform, TransformConfig
 from phossim.pipeline import evaluate, train
 from phossim.config import Config
-from phossim.implementation.environment.openai_gym import GymConfig, \
-    AtariConfig, get_atari_environment
+from phossim.implementation.environment.hallway import HallwayConfig, \
+    HallwayEnv
 from phossim.implementation.agent.stable_baselines import get_agent, \
     StableBaselineAgentConfig, TrainingConfig
-from phossim.implementation.filtering.edge import CannyConfig, CannyFilter
-from phossim.implementation.phosphene_simulation.basic import \
-    BasicPhospheneSimulationConfig, PhospheneSimulationBasic
 from phossim.utils import RecordingConfig, RecordingTransform
 from phossim.rendering import DisplayConfig, ScreenDisplay
 
@@ -19,20 +24,23 @@ if __name__ == '__main__':
     input_key = 'input'
     filter_key = 'filtered_observation'
     phosphene_key = 'phosphenes'
-    path_base = Path('~/Data/phosphenes/atari').expanduser()
+    path_base = Path('~/Data/phosphenes/hallway').expanduser()
     path_recording = path_base.joinpath('recording')
     path_tensorboard = path_base.joinpath('log')
-    path_model = path_base.joinpath('models/PPO_breakout')
-    path_model.parent.mkdir(exist_ok=True)
+    path_model = path_base.joinpath('models/A2C_hallway')
+    path_model.parent.mkdir(parents=True, exist_ok=True)
     video_length = 300
     def recording_trigger(episode): return episode % 10000 == 0
 
-    environment_config = AtariConfig(
-        GymConfig('ALE/Breakout-v5',
-                  {'render_mode': 'rgb_array',
-                   'frameskip': 1,  # Handled by AtariWrapper
-                   'repeat_action_probability': 0,
-                   'full_action_space': True}))
+    size = 128
+    shape = (size, size, 3)
+    shape_grey = (size, size, 1)
+    observation_space = gym.spaces.Box(low=0, high=255,
+                                       shape=shape, dtype=np.uint8)
+    observation_space_grey = gym.spaces.Box(low=0, high=255,
+                                            shape=shape_grey, dtype=np.uint8)
+
+    environment_config = HallwayConfig(observation_space, size=size)
 
     transform_configs = [
         (Transform, TransformConfig(input_key)),
@@ -40,13 +48,15 @@ if __name__ == '__main__':
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='input')),
+        (GreyscaleTransform, GreyscaleConfig(None, observation_space_grey)),
         (CannyFilter, CannyConfig(filter_key, sigma=1)),
         (RecordingTransform, RecordingConfig(path_recording,
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='filtered')),
         (PhospheneSimulationBasic,
-         BasicPhospheneSimulationConfig(phosphene_key, image_size=(84, 84))),
+         BasicPhospheneSimulationConfig(phosphene_key,
+                                        image_size=(size, size))),
         (RecordingTransform, RecordingConfig(path_recording,
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
@@ -54,17 +64,17 @@ if __name__ == '__main__':
     ]
 
     agent_config = StableBaselineAgentConfig(
-        path_model, 'PPO', 'MlpPolicy', {'tensorboard_log': path_tensorboard})
+        path_model, 'A2C', 'CnnPolicy', {'tensorboard_log': path_tensorboard})
 
     display_configs = [
-         (ScreenDisplay, DisplayConfig(input_key, input_key, 'gym')),
+         (ScreenDisplay, DisplayConfig(input_key, input_key, 'hallway')),
          (ScreenDisplay, DisplayConfig(filter_key, filter_key, 'canny')),
          (ScreenDisplay, DisplayConfig(phosphene_key, phosphene_key, 'basic')),
     ]
 
-    training_config = TrainingConfig(int(1e7))
+    training_config = TrainingConfig(int(1e6))
 
-    config = Config(environment_getter=get_atari_environment,
+    config = Config(environment_getter=HallwayEnv,
                     agent_getter=get_agent,
                     environment_config=environment_config,
                     transform_configs=transform_configs,

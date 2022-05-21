@@ -20,7 +20,8 @@ class RecordingConfig(AbstractConfig):
 
 class RecordingTransform(RecordVideo):
     def __init__(self, env: gym.Env, config: RecordingConfig):
-        env.metadata['render.modes'] = env.metadata['render_modes']
+        if 'render_modes' in env.metadata:  # Fixing gym bug
+            env.metadata['render.modes'] = env.metadata['render_modes']
         super().__init__(env, **asdict(config))
 
 
