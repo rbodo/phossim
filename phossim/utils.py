@@ -4,6 +4,7 @@ from typing import Optional, Callable
 
 import gym
 from gym.wrappers import TimeLimit, RecordVideo
+from stable_baselines3.common.monitor import Monitor
 
 from phossim.config import Config, AbstractConfig
 
@@ -25,4 +26,5 @@ class RecordingTransform(RecordVideo):
 
 def wrap_common(environment: gym.Env, config: Config) -> gym.Env:
     environment = TimeLimit(environment, config.max_episode_steps)
+    environment = Monitor(environment)
     return environment

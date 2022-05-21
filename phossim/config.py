@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import os
 from dataclasses import dataclass
 from typing import Callable, Tuple, List, Type, TYPE_CHECKING
 
@@ -10,9 +12,12 @@ if TYPE_CHECKING:
     from phossim.rendering import DisplayConfig, Display
     from phossim.interface import Transform, TransformConfig, AgentConfig
 
-USE_CUDA = False
+USE_CUDA = True
+gpu = '4'
 DEVICE = 'cuda:0' if USE_CUDA else 'cpu'
 DTYPE = torch.float32
+
+os.environ['CUDA_VISIBLE_DEVICES'] = gpu
 
 QUIT_KEY = 'q'
 KNOWN_KEYS = [ord(QUIT_KEY)]

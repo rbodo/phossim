@@ -25,8 +25,8 @@ if __name__ == '__main__':
     path_tensorboard = path_base.joinpath('log')
     path_model = path_base.joinpath('models/PPO_breakout')
     path_model.parent.mkdir(exist_ok=True)
-    video_length = 100
-    def recording_trigger(step): return step == 0
+    video_length = 300
+    def recording_trigger(episode): return episode % 10000 == 0
 
     environment_config = AtariConfig(
         GymConfig('ALE/Breakout-v5',
@@ -38,18 +38,18 @@ if __name__ == '__main__':
     transform_configs = [
         (Transform, TransformConfig(input_key)),
         (RecordingTransform, RecordingConfig(path_recording,
-                                             step_trigger=recording_trigger,
+                                             episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='input')),
         (CannyFilter, CannyConfig(filter_key, sigma=1)),
         (RecordingTransform, RecordingConfig(path_recording,
-                                             step_trigger=recording_trigger,
+                                             episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='filtered')),
         (PhospheneSimulationBasic,
          BasicPhospheneSimulationConfig(phosphene_key, image_size=(84, 84))),
         (RecordingTransform, RecordingConfig(path_recording,
-                                             step_trigger=recording_trigger,
+                                             episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='phosphenes')),
     ]
@@ -64,7 +64,7 @@ if __name__ == '__main__':
                                        'identity')),
     ]
 
-    training_config = TrainingConfig(int(1e8))
+    training_config = TrainingConfig(int(1e7))
 
     config = Config(environment_getter=get_atari_environment,
                     agent_getter=get_agent,

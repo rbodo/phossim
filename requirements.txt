@@ -1,0 +1,6 @@
+gym
+ale-py
+autorom[accept-rom-license]
+stable_baselines3
+opencv-python
+tensorboard

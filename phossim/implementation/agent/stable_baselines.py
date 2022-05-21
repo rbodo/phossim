@@ -12,7 +12,7 @@ from phossim.interface import AgentConfig
 @dataclass
 class TrainingConfig(AbstractConfig):
     total_timesteps: int
-    log_interval: int = 100
+    log_interval: int = 50
     tb_log_name: str = 'run'
     eval_env: Optional[gym.Env] = None
     eval_freq: int = -1
