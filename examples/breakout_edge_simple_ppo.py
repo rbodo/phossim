@@ -4,9 +4,8 @@ from pathlib import Path
 from phossim.interface import Transform, TransformConfig
 from phossim.pipeline import evaluate, train
 from phossim.config import Config
-from phossim.implementation.environment.openai_gym.environment import GymConfig
-from phossim.implementation.environment.openai_gym.atari.environment import \
-    get_atari_environment, AtariConfig
+from phossim.implementation.environment.openai_gym import GymConfig, \
+    AtariConfig, get_atari_environment
 from phossim.implementation.agent.stable_baselines import get_agent, \
     StableBaselineAgentConfig, TrainingConfig
 from phossim.implementation.filtering.edge import CannyConfig, CannyFilter
