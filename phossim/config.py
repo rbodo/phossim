@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Callable, Tuple, List, Type, TYPE_CHECKING, Union
+from typing import Callable, Tuple, List, Type, TYPE_CHECKING, Union, Optional
 
 import gym
 from stable_baselines3.common.base_class import BaseAlgorithm
@@ -10,7 +10,8 @@ import torch
 
 if TYPE_CHECKING:
     from phossim.rendering import DisplayConfig, Display
-    from phossim.interface import Transform, TransformConfig, AgentConfig
+    from phossim.interface import Transform, TransformConfig
+    from phossim.implementation.agent.human import HumanAgent
 
 USE_CUDA = True
 gpu = '4'
@@ -41,13 +42,13 @@ class Config(AbstractConfig):
     """
 
     environment_getter: Union[Type[gym.Env], Callable[[...], gym.Env]]
-    agent_getter: Callable[[gym.Env, ...], BaseAlgorithm]
+    agent_getter: Callable[[gym.Env, ...], Union[BaseAlgorithm, HumanAgent]]
 
     environment_config: AbstractConfig
     transform_configs: List[Tuple[Type[Transform], TransformConfig]]
-    agent_config: AgentConfig
+    agent_config: AbstractConfig
     display_configs: List[Tuple[Type[Display], DisplayConfig]]
-    training_config: AbstractConfig
+    training_config: Optional[AbstractConfig] = None
 
     max_num_episodes: int = 100
     max_episode_steps: int = 100

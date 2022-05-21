@@ -3,7 +3,11 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict
 
-from phossim.config import Config, QUIT_KEY
+import cv2
+import gym
+import numpy as np
+
+from phossim.config import Config, QUIT_KEY, AbstractConfig
 
 CAMERA_KEY = 'c'
 FILTER_KEY = 'f'
@@ -147,22 +151,22 @@ class HumanAgentConfig(Config):
             self.modes[PHOSPHENE_KEY] = PhospheneModes.realistic
 
 
-class Agent:
+@dataclass
+class HumanAgentConfig(AbstractConfig):
+    action_map: dict
+    default_action: int = 0
 
-    def step(self, environment):
+
+class HumanAgent:
+    def __init__(self, environment: gym.Env, config: HumanAgentConfig):
+        self.environment = environment
+        self.action_map = config.action_map
+        self.default_action = config.default_action
+        assert len(self.action_map) <= self.environment.action_space.n
+
+    # noinspection PyUnusedLocal
+    def predict(self, observation: np.ndarray) -> int:
         key = cv2.waitKey(0)
-        if key == ord('w'):
-            end, reward, state_raw = environment.step(0)
-            print(reward)
-
-        if key == ord('a'):
-            end, reward, state_raw = environment.step(1)
-            print(reward)
-
-        if key == ord('d'):
-            end, reward, state_raw = environment.step(2)
-            print(reward)
-
-        if key == ord('r'):
-            end, reward, state_raw = environment.reset()
-            print(reward)
+        if key != -1:
+            return self.action_map.get(chr(key), self.default_action)
+        return self.default_action

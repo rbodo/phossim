@@ -6,7 +6,7 @@ import numpy as np
 
 from phossim.implementation.filtering.edge import CannyFilter, CannyConfig
 from phossim.implementation.filtering.preprocessing import \
-    GreyscaleTransform, GreyscaleConfig
+    GrayscaleTransform, GrayscaleConfig
 from phossim.implementation.phosphene_simulation.basic import \
     PhospheneSimulationBasic, BasicPhospheneSimulationConfig
 from phossim.interface import Transform, TransformConfig
@@ -34,11 +34,11 @@ if __name__ == '__main__':
 
     size = 128
     shape = (size, size, 3)
-    shape_grey = (size, size, 1)
+    shape_gray = (size, size, 1)
     observation_space = gym.spaces.Box(low=0, high=255,
                                        shape=shape, dtype=np.uint8)
-    observation_space_grey = gym.spaces.Box(low=0, high=255,
-                                            shape=shape_grey, dtype=np.uint8)
+    observation_space_gray = gym.spaces.Box(low=0, high=255,
+                                            shape=shape_gray, dtype=np.uint8)
 
     environment_config = HallwayConfig(observation_space, size=size)
 
@@ -48,7 +48,7 @@ if __name__ == '__main__':
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='input')),
-        (GreyscaleTransform, GreyscaleConfig(None, observation_space_grey)),
+        (GrayscaleTransform, GrayscaleConfig(None, observation_space_gray)),
         (CannyFilter, CannyConfig(filter_key, sigma=1)),
         (RecordingTransform, RecordingConfig(path_recording,
                                              episode_trigger=recording_trigger,

@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Optional
 
 import gym
@@ -6,7 +7,6 @@ import stable_baselines3
 from stable_baselines3.common.base_class import BaseAlgorithm
 
 from phossim.config import AbstractConfig
-from phossim.interface import AgentConfig
 
 
 @dataclass
@@ -22,7 +22,8 @@ class TrainingConfig(AbstractConfig):
 
 
 @dataclass
-class StableBaselineAgentConfig(AgentConfig):
+class StableBaselineAgentConfig(AbstractConfig):
+    path_model: Path
     model_id: str
     policy_id: str
     kwargs: Optional[dict] = field(default_factory=dict)

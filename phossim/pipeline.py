@@ -41,7 +41,7 @@ class Pipeline:
 
             while True:
 
-                action, state = self.agent.predict(observation)
+                action = self.agent.predict(observation)
 
                 observation, reward, done, info = self.environment.step(action)
 

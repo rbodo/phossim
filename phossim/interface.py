@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Union
 
 import cv2
@@ -51,11 +50,6 @@ def wrap_transforms(environment: gym.Env, config: Config):
         environment = transform_class(environment, transform_config)
         check_env(environment, skip_render_check=False)
     return environment
-
-
-@dataclass
-class AgentConfig(AbstractConfig):
-    path_model: Path
 
 
 def get_agent(environment: gym.Env, config: Config) -> BaseAlgorithm:
