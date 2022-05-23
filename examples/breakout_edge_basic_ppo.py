@@ -1,21 +1,46 @@
+import os
 import sys
+from dataclasses import dataclass
 from pathlib import Path
+from typing import List, Tuple, Type, Optional
 
-from phossim.interface import Transform, TransformConfig
-from phossim.pipeline import evaluate, train
-from phossim.config import Config
-from phossim.implementation.environment.openai_gym import GymConfig, \
-    AtariConfig, get_atari_environment
-from phossim.implementation.agent.stable_baselines import get_agent, \
-    StableBaselineAgentConfig, TrainingConfig
-from phossim.implementation.filtering.edge import CannyConfig, CannyFilter
-from phossim.implementation.phosphene_simulation.basic import \
-    BasicPhospheneSimulationConfig, PhospheneSimulationBasic
-from phossim.utils import RecordingConfig, RecordingTransform
-from phossim.rendering import DisplayConfig, ScreenDisplay
+from phossim.pipeline import BasePipeline
+from phossim.environment.openai_gym import (GymConfig, AtariConfig,
+                                            get_atari_environment)
+from phossim.transforms import (Transform, TransformConfig, wrap_transforms,
+                                TimeLimitConfig, MonitorConfig,
+                                TimeLimitTransform, MonitorTransform)
+from phossim.filtering.edge import CannyConfig, CannyFilter
+from phossim.phosphene_simulation.basic import (BasicPhospheneSimulationConfig,
+                                                PhospheneSimulationBasic)
+from phossim.recording import RecordingConfig, RecordingTransform
+from phossim.agent.stable_baselines import (get_agent, TrainingConfig,
+                                            StableBaselineAgentConfig)
+from phossim.rendering import (DisplayConfig, ScreenDisplay, DisplayList,
+                               Display)
+
+
+@dataclass
+class Config:
+    environment_config: AtariConfig
+    transforms: List[Tuple[Type[Transform], TransformConfig]]
+    agent_config: StableBaselineAgentConfig
+    displays: List[Display]
+    device: Optional[str] = 'cpu'
+
+
+class Pipeline(BasePipeline):
+    def __init__(self, config: Config):
+        super().__init__()
+        self.environment = get_atari_environment(config.environment_config)
+        self.environment = wrap_transforms(self.environment, config.transforms)
+        self.agent = get_agent(self.environment, config.agent_config)
+        self.renderer = DisplayList(config.displays)
 
 
 if __name__ == '__main__':
+    os.environ['CUDA_VISIBLE_DEVICES'] = '4'
+    device = 'cuda:0'
     input_key = 'input'
     filter_key = 'filtered_observation'
     phosphene_key = 'phosphenes'
@@ -34,7 +59,7 @@ if __name__ == '__main__':
                    'repeat_action_probability': 0,
                    'full_action_space': True}))
 
-    transform_configs = [
+    transforms = [
         (Transform, TransformConfig(input_key)),
         (RecordingTransform, RecordingConfig(path_recording,
                                              episode_trigger=recording_trigger,
@@ -51,30 +76,32 @@ if __name__ == '__main__':
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='phosphenes')),
+        (TimeLimitTransform, TimeLimitConfig()),
+        (MonitorTransform, MonitorConfig())
     ]
 
     agent_config = StableBaselineAgentConfig(
         path_model, 'PPO', 'MlpPolicy', {'tensorboard_log': path_tensorboard})
 
-    display_configs = [
-         (ScreenDisplay, DisplayConfig(input_key, input_key, 'gym')),
-         (ScreenDisplay, DisplayConfig(filter_key, filter_key, 'canny')),
-         (ScreenDisplay, DisplayConfig(phosphene_key, phosphene_key, 'basic')),
+    displays = [
+         ScreenDisplay(DisplayConfig(input_key, input_key, 'gym')),
+         ScreenDisplay(DisplayConfig(filter_key, filter_key, 'canny')),
+         ScreenDisplay(DisplayConfig(phosphene_key, phosphene_key, 'basic')),
     ]
 
+    _config = Config(environment_config=environment_config,
+                     transforms=transforms,
+                     agent_config=agent_config,
+                     displays=displays,
+                     device=device,
+                     )
+
+    pipeline = Pipeline(_config)
+
     training_config = TrainingConfig(int(1e7))
+    pipeline.agent.learn(**training_config.asdict())
+    pipeline.agent.save(_config.agent_config.path_model)
 
-    config = Config(environment_getter=get_atari_environment,
-                    agent_getter=get_agent,
-                    environment_config=environment_config,
-                    transform_configs=transform_configs,
-                    agent_config=agent_config,
-                    display_configs=display_configs,
-                    training_config=training_config,
-                    )
-
-    train(config)
-
-    evaluate(config)
+    pipeline.run()
 
     sys.exit()

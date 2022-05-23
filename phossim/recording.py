@@ -3,14 +3,10 @@ from pathlib import Path
 from typing import Optional, Callable
 
 import gym
-from gym.wrappers import TimeLimit, RecordVideo
-from stable_baselines3.common.monitor import Monitor
-
-from phossim.config import Config, AbstractConfig
 
 
 @dataclass
-class RecordingConfig(AbstractConfig):
+class RecordingConfig:
     video_folder: Path
     episode_trigger: Optional[Callable[[int], bool]] = None
     step_trigger: Optional[Callable[[int], bool]] = None
@@ -18,14 +14,8 @@ class RecordingConfig(AbstractConfig):
     name_prefix: str = None
 
 
-class RecordingTransform(RecordVideo):
+class RecordingTransform(gym.wrappers.RecordVideo):
     def __init__(self, env: gym.Env, config: RecordingConfig):
         if 'render_modes' in env.metadata:  # Fixing gym bug
             env.metadata['render.modes'] = env.metadata['render_modes']
         super().__init__(env, **asdict(config))
-
-
-def wrap_common(environment: gym.Env, config: Config) -> gym.Env:
-    environment = TimeLimit(environment, config.max_episode_steps)
-    environment = Monitor(environment)
-    return environment

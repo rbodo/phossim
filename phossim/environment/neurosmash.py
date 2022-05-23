@@ -6,18 +6,16 @@ import socket
 import gym
 from gym import spaces
 
-from phossim.config import AbstractConfig
-
 
 @dataclass
-class NeurosmashConfig(AbstractConfig):
+class NeurosmashConfig:
     ip: str = '127.0.0.1'
     port: int = 13000
     resolution: int = 96
     render_mode: Optional[str] = None
 
 
-def get_neurosmash_environment(config: AbstractConfig) -> gym.Env:
+def get_neurosmash_environment(config: NeurosmashConfig) -> gym.Env:
     return NeurosmashEnv(**asdict(config))
 
 

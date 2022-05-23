@@ -3,7 +3,7 @@ import numpy as np
 import torch
 
 from phossim.config import DTYPE, DEVICE
-from phossim.interface import Transform, TransformConfig
+from phossim.transforms import Transform, TransformConfig
 
 
 def get_eccentricity_scaling(r):

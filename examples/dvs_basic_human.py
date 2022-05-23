@@ -4,14 +4,13 @@ from pathlib import Path
 import gym
 import numpy as np
 
-from phossim.implementation.agent.human import HumanAgentConfig, HumanAgent
-from phossim.implementation.environment.camera import DVSConfig, DVSFrameStream
-from phossim.implementation.phosphene_simulation.basic import \
+from phossim.agent.human import HumanAgentConfig, HumanAgent
+from phossim.environment import DVSConfig, DVSFrameStream
+from phossim.phosphene_simulation import \
     PhospheneSimulationBasic, BasicPhospheneSimulationConfig
-from phossim.interface import Transform, TransformConfig
-from phossim.pipeline import evaluate
+from phossim.transforms import Transform, TransformConfig
 from phossim.config import Config
-from phossim.utils import RecordingConfig, RecordingTransform
+from phossim.recording import RecordingConfig, RecordingTransform
 from phossim.rendering import DisplayConfig, ScreenDisplay
 
 

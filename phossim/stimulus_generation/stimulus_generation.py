@@ -5,9 +5,9 @@ import numpy as np
 import torch
 
 from phossim.config import DEVICE, DTYPE
-from phossim.implementation.phosphene_simulation.realistic import \
+from phossim.phosphene_simulation.realistic import \
     get_phosphene_map
-from phossim.interface import Transform, TransformConfig
+from phossim.transforms import Transform, TransformConfig
 
 
 @dataclass

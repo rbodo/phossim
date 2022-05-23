@@ -1,101 +1,62 @@
-from dataclasses import asdict
 from itertools import count
+from typing import Union
 
-from phossim.config import QUIT_KEY, Config
-from phossim.interface import get_agent, wrap_transforms, get_environment
-from phossim.utils import wrap_common
-from phossim.rendering import get_renderer
+import gym
+from stable_baselines3.common.base_class import BaseAlgorithm
+
+from phossim.agent.human import HumanAgent
+from phossim.rendering import DisplayList
+
+QUIT_KEY = 'q'
 
 
-class Pipeline:
-    def __init__(self, config: Config):
-        self.config = config
-        self.is_alive = False
-        self.environment = None
-        self.filter = None
-        self.stimulus_generator = None
-        self.phosphene_simulator = None
-        self.agent = None
-        self.renderer = None
+class BasePipeline:
+    environment: gym.Env = None
+    agent: Union[BaseAlgorithm, HumanAgent] = None
+    renderer: DisplayList = None
 
-    def setup(self):
-        self.renderer = get_renderer(self.config)
-        self.environment = get_environment(self.config)
-        self.environment = wrap_transforms(self.environment, self.config)
-        self.environment = wrap_common(self.environment, self.config)
-        self.agent = get_agent(self.environment, self.config)
-        self.is_alive = True
+    def __init__(self, *args, **kwargs):
+        self.max_num_episodes = kwargs.get('max_num_episodes', float('inf'))
+        self._quit_key = kwargs.get('quit_key', QUIT_KEY)
 
-    def update(self, key):
-        if self.is_alive:
-            self.config.apply_key(key)
-            self.setup()
+    def run_episode(self):
+
+        observation = self.environment.reset()
+
+        while True:
+
+            action, _ = self.agent.predict(observation)
+
+            observation, reward, done, info = self.environment.step(action)
+
+            key = self.renderer.render(info)
+
+            if self._is_episode_done(key, done):
+                if self._is_pipeline_done(key):
+                    self.close()
+                return key
 
     def run(self):
-        assert self.is_alive, "Call pipeline.setup() before running."
 
-        key = None
         for i_episode in count():
 
-            observation = self.environment.reset()
-
-            while True:
-
-                action = self.agent.predict(observation)
-
-                observation, reward, done, info = self.environment.step(action)
-
-                key = self.renderer(info)
-
-                if self._is_episode_done(key, done):
-                    break
+            key = self.run_episode()
 
             if self._is_run_done(key, i_episode):
-                break
+                return key
 
-        return key
+    def _is_episode_done(self, key: int, done: bool) -> bool:
+        return self._is_quit(key) or done
 
-    @staticmethod
-    def _is_episode_done(key, done):
-        return key or done
+    def _is_run_done(self, key: int, i_episode: int) -> bool:
+        return self._is_quit(key) or i_episode > self.max_num_episodes
 
-    def _is_run_done(self, key, i_episode):
-        return key or i_episode > self.config.max_num_episodes
+    def _is_pipeline_done(self, key: int) -> bool:
+        return self._is_quit(key)
 
-    @staticmethod
-    def _is_pipeline_done(key):
-        return key == ord(QUIT_KEY)
+    def _is_quit(self, key: int) -> bool:
+        return key == ord(self._quit_key)
 
-    def stop(self, key):
+    def close(self):
         self.environment.close()
-        if self._is_pipeline_done(key):
-            self.renderer.stop()
-            self.is_alive = False
-
-
-def train(config: Config):
-    pipeline = Pipeline(config)
-
-    pipeline.setup()
-
-    pipeline.agent.learn(**asdict(config.training_config))
-
-    pipeline.agent.save(config.agent_config.path_model)
-
-
-def evaluate(config: Config):
-
-    pipeline = Pipeline(config)
-
-    pipeline.setup()
-
-    while pipeline.is_alive:
-
-        # Run full pipeline until user initiates a change in config.
-        key = pipeline.run()
-
-        # Close pipeline before applying any changes.
-        pipeline.stop(key)
-
-        # Apply modification to pipeline configuration.
-        pipeline.update(key)
+        self.renderer.stop()

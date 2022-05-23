@@ -5,11 +5,9 @@ import socket
 import gym
 from gym import spaces
 
-from phossim.config import AbstractConfig
-
 
 @dataclass
-class HallwayConfig(AbstractConfig):
+class HallwayConfig:
     observation_space: gym.Space
     ip: str = '127.0.0.1'
     port: int = 13000

@@ -1,24 +1,19 @@
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 import cv2
 import numpy as np
 
-from phossim.config import KNOWN_KEYS, AbstractConfig, Config
-
-
-def validate_key(key: int) -> int:
-    """If key represents a known choice, return key, otherwise return None."""
-
-    if key in KNOWN_KEYS:
-        return key
+from phossim.pipeline import QUIT_KEY
 
 
 @dataclass
-class DisplayConfig(AbstractConfig):
+class DisplayConfig:
     name: str
     info_key: str
     label: Optional[str] = None
+    waitkey_delay: int = 1
+    known_keys: Tuple[str] = (QUIT_KEY,)
 
 
 class Display:
@@ -27,25 +22,25 @@ class Display:
         self.info_key = config.info_key
         self._label = config.label
         self.stopped = False
+        self._waitkey_delay: int = config.waitkey_delay  # in ms.
+        self.known_keys = config.known_keys
 
     def stop(self):
         self.stopped = True
         cv2.destroyAllWindows()
 
-    def __call__(self, frame: np.ndarray) -> int:
+    def render(self, frame: np.ndarray) -> int:
         cv2.imshow(self.name, frame)
 
-        key = cv2.waitKey(1)  # in ms.
-
-        return validate_key(key)
+        return cv2.waitKey(self._waitkey_delay)
 
 
 class ScreenDisplay(Display):
     """Continuously show a frame on screen using a dedicated thread."""
 
-    def __call__(self, frame: np.ndarray) -> int:
+    def render(self, frame: np.ndarray) -> int:
         frame = self.write_label_on_frame(frame)
-        return super().__call__(frame)
+        return super().render(frame)
 
     def write_label_on_frame(self, frame: np.ndarray):
         if self._label is not None:
@@ -87,7 +82,7 @@ class VRDisplay(Display):
         cv2.setWindowProperty(self.name, cv2.WND_PROP_FULLSCREEN,
                               cv2.WINDOW_FULLSCREEN)
 
-    def __call__(self, frame: np.ndarray) -> int:
+    def render(self, frame: np.ndarray) -> int:
         if self.yrange is None:
             self.set_range(frame)
 
@@ -96,31 +91,21 @@ class VRDisplay(Display):
         # Center on right eye.
         self._screen[np.ix_(self.yrange, self.xrange_right)] = frame
 
-        return super().__call__(self._screen)
+        return super().render(self._screen)
 
 
-class Renderer:
-    def __init__(self):
-        self.displays = {}
+class DisplayList:
+    def __init__(self, displays: List[Display]):
+        self.displays = displays
 
-    def __call__(self, info: dict) -> int:
-        for name, display in self.displays.items():
+    def render(self, info: dict) -> int:
+        for display in self.displays:
             frame = info.get(display.info_key, None)
             if frame is not None:
-                key = display(frame)
-                if key is not None:
+                key = display.render(frame)
+                if key >= 0 and chr(key) in display.known_keys:
                     return key
 
     def stop(self):
-        for display in self.displays.values():
+        for display in self.displays:
             display.stop()
-
-
-def get_renderer(config: Config) -> Renderer:
-
-    renderer = Renderer()
-    for display_class, display_config in config.display_configs:
-        display = display_class(display_config)
-        renderer.displays[display.name] = display
-
-    return renderer

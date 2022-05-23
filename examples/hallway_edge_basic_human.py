@@ -4,18 +4,18 @@ from pathlib import Path
 import gym
 import numpy as np
 
-from phossim.implementation.agent.human import HumanAgentConfig, HumanAgent
-from phossim.implementation.filtering.edge import CannyFilter, CannyConfig
-from phossim.implementation.filtering.preprocessing import \
+from phossim.agent.human import HumanAgentConfig, HumanAgent
+from phossim.filtering import CannyFilter, CannyConfig
+from phossim.filtering import \
     GrayscaleTransform, GrayscaleConfig, ResizeTransform, ResizeConfig
-from phossim.implementation.phosphene_simulation.basic import \
+from phossim.phosphene_simulation import \
     PhospheneSimulationBasic, BasicPhospheneSimulationConfig
-from phossim.interface import Transform, TransformConfig
+from phossim.transforms import Transform, TransformConfig
 from phossim.pipeline import evaluate
 from phossim.config import Config
-from phossim.implementation.environment.hallway import HallwayConfig, \
+from phossim.environment import HallwayConfig, \
     HallwayEnv
-from phossim.utils import RecordingConfig, RecordingTransform
+from phossim.recording import RecordingConfig, RecordingTransform
 from phossim.rendering import DisplayConfig, ScreenDisplay
 
 

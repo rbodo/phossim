@@ -7,12 +7,11 @@ import cv2
 import gym
 from dv import NetworkFrameInput
 
-from phossim.config import AbstractConfig
-
 
 @dataclass
-class CameraConfig(AbstractConfig):
+class CameraConfig:
     observation_space: gym.Space
+    camera_id: int
 
 
 @dataclass
@@ -24,12 +23,14 @@ class DVSConfig(CameraConfig):
 class AbstractVideoStream(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array']}
 
-    def __init__(self, config: AbstractConfig):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        self.config = config
         self.stream = None
         self.frame = None
+
+    def step(self, action):
+        return super().step(action)
 
     def reset(self):
         return self.frame
@@ -49,10 +50,10 @@ class CameraStream(AbstractVideoStream):
     Class that continuously gets frames from a VideoCapture object.
     """
 
-    def __init__(self, config):
-        super().__init__(config)
+    def __init__(self, config: CameraConfig):
+        super().__init__()
         a = cv2.CAP_DSHOW if os.name == 'nt' else None  # Only for Windows
-        self.stream = cv2.VideoCapture(config.cameradevice, a)
+        self.stream = cv2.VideoCapture(config.camera_id, a)
         grabbed, self.frame = self.stream.read()
 
     def step(self, action):
@@ -71,7 +72,7 @@ class DVSFrameStream(AbstractVideoStream):
     """
 
     def __init__(self, config: DVSConfig):
-        super().__init__(config)
+        super().__init__()
         try:
             self.stream = NetworkFrameInput(address=config.ip,
                                             port=config.port)

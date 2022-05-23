@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Optional
 
@@ -6,11 +6,9 @@ import gym
 import stable_baselines3
 from stable_baselines3.common.base_class import BaseAlgorithm
 
-from phossim.config import AbstractConfig
-
 
 @dataclass
-class TrainingConfig(AbstractConfig):
+class TrainingConfig:
     total_timesteps: int
     log_interval: int = 50
     tb_log_name: str = 'run'
@@ -20,9 +18,12 @@ class TrainingConfig(AbstractConfig):
     eval_log_path: Optional[str] = None
     reset_num_timesteps: bool = True
 
+    def asdict(self):
+        return asdict(self)
+
 
 @dataclass
-class StableBaselineAgentConfig(AbstractConfig):
+class StableBaselineAgentConfig:
     path_model: Path
     model_id: str
     policy_id: str

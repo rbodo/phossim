@@ -1,14 +1,14 @@
 import sys
 from pathlib import Path
 
-from phossim.interface import Transform, TransformConfig
+from phossim.transforms import Transform, TransformConfig
 from phossim.pipeline import evaluate, train
 from phossim.config import Config
-from phossim.implementation.environment.neurosmash import \
+from phossim.environment import \
     NeurosmashConfig, get_neurosmash_environment
-from phossim.implementation.agent.stable_baselines import get_agent, \
+from phossim.agent import get_agent, \
     StableBaselineAgentConfig, TrainingConfig
-from phossim.utils import RecordingConfig, RecordingTransform
+from phossim.recording import RecordingConfig, RecordingTransform
 from phossim.rendering import DisplayConfig, ScreenDisplay
 
 
