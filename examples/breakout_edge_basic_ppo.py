@@ -38,7 +38,7 @@ class Pipeline(BasePipeline):
         self.renderer = DisplayList(config.displays)
 
 
-if __name__ == '__main__':
+def main():
     os.environ['CUDA_VISIBLE_DEVICES'] = '4'
     device = 'cuda:0'
     input_key = 'input'
@@ -89,19 +89,21 @@ if __name__ == '__main__':
          ScreenDisplay(DisplayConfig(phosphene_key, phosphene_key, 'basic')),
     ]
 
-    _config = Config(environment_config=environment_config,
-                     transforms=transforms,
-                     agent_config=agent_config,
-                     displays=displays,
-                     device=device,
-                     )
+    config = Config(environment_config,
+                    transforms,
+                    agent_config,
+                    displays,
+                    device)
 
-    pipeline = Pipeline(_config)
+    pipeline = Pipeline(config)
 
     training_config = TrainingConfig(int(1e7))
     pipeline.agent.learn(**training_config.asdict())
-    pipeline.agent.save(_config.agent_config.path_model)
+    pipeline.agent.save(config.agent_config.path_model)
 
     pipeline.run()
 
+
+if __name__ == '__main__':
+    main()
     sys.exit()

@@ -4,7 +4,7 @@ from typing import Optional, Tuple, List
 import cv2
 import numpy as np
 
-from phossim.pipeline import QUIT_KEY
+from phossim import QUIT_KEY
 
 
 @dataclass

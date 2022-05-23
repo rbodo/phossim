@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, TYPE_CHECKING
 
 import gym
 import numpy as np
 
-from phossim.rendering import Display
+if TYPE_CHECKING:
+    from phossim.rendering import Display
 
 
 @dataclass
@@ -24,6 +27,7 @@ class HumanAgent:
 
     def predict(self, observation: np.ndarray) -> Tuple[int, None]:
         key = self.display.render(observation)
+        action = self.default_action
         if key != -1 and chr(key) in self.action_map:
-            return self.action_map[chr(key)]
-        return self.default_action, None
+            action = self.action_map[chr(key)]
+        return action, None

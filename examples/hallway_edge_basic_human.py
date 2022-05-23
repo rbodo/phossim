@@ -1,31 +1,54 @@
+import os
 import sys
+from dataclasses import dataclass
 from pathlib import Path
+from typing import List, Tuple, Type, Optional
 
 import gym
 import numpy as np
 
-from phossim.agent.human import HumanAgentConfig, HumanAgent
-from phossim.filtering import CannyFilter, CannyConfig
-from phossim.filtering import \
-    GrayscaleTransform, GrayscaleConfig, ResizeTransform, ResizeConfig
-from phossim.phosphene_simulation import \
-    PhospheneSimulationBasic, BasicPhospheneSimulationConfig
-from phossim.transforms import Transform, TransformConfig
-from phossim.pipeline import evaluate
-from phossim.config import Config
-from phossim.environment import HallwayConfig, \
-    HallwayEnv
+from phossim.pipeline import BasePipeline
+from phossim.environment.hallway import HallwayConfig, Hallway
+from phossim.transforms import Transform, TransformConfig, wrap_transforms
+from phossim.filtering.preprocessing import (GrayscaleTransform, ResizeConfig,
+                                             GrayscaleConfig, ResizeTransform)
+from phossim.filtering.edge import CannyFilter, CannyConfig
+from phossim.phosphene_simulation.basic import (PhospheneSimulationBasic,
+                                                BasicPhospheneSimulationConfig)
 from phossim.recording import RecordingConfig, RecordingTransform
-from phossim.rendering import DisplayConfig, ScreenDisplay
+from phossim.agent.human import HumanAgent, HumanAgentConfig
+from phossim.rendering import (DisplayConfig, ScreenDisplay, DisplayList,
+                               Display, VRDisplay, VRDisplayConfig)
 
 
-if __name__ == '__main__':
+@dataclass
+class Config:
+    environment_config: HallwayConfig
+    transforms: List[Tuple[Type[Transform], TransformConfig]]
+    agent_config: HumanAgentConfig
+    displays: List[Display]
+    vr_display: VRDisplay
+    device: Optional[str] = 'cpu'
+
+
+class Pipeline(BasePipeline):
+    def __init__(self, config: Config):
+        super().__init__()
+        self.environment = Hallway(config.environment_config)
+        self.environment = wrap_transforms(self.environment, config.transforms)
+        self.agent = HumanAgent(self.environment, config.vr_display,
+                                config.agent_config)
+        self.renderer = DisplayList(config.displays)
+
+
+def main():
+    os.environ['CUDA_VISIBLE_DEVICES'] = '4'
+    device = 'cuda:0'
     input_key = 'input'
     filter_key = 'filtered_observation'
     phosphene_key = 'phosphenes'
     path_base = Path('~/Data/phosphenes/hallway_human').expanduser()
     path_recording = path_base.joinpath('recording')
-    path_tensorboard = path_base.joinpath('log')
     video_length = 300
     def recording_trigger(episode): return episode % 10000 == 0
 
@@ -44,7 +67,7 @@ if __name__ == '__main__':
 
     environment_config = HallwayConfig(observation_space_in, size=size_in)
 
-    transform_configs = [
+    transforms = [
         (Transform, TransformConfig(input_key)),
         (ResizeTransform, ResizeConfig(None, observation_space_resized)),
         (RecordingTransform, RecordingConfig(path_recording,
@@ -68,20 +91,27 @@ if __name__ == '__main__':
 
     agent_config = HumanAgentConfig({'w': 0, 'a': 1, 'd': 2})
 
-    display_configs = [
-         (ScreenDisplay, DisplayConfig(input_key, input_key, 'hallway')),
-         (ScreenDisplay, DisplayConfig(filter_key, filter_key, 'canny')),
-         (ScreenDisplay, DisplayConfig(phosphene_key, phosphene_key, 'basic')),
+    displays = [
+         ScreenDisplay(DisplayConfig(input_key, input_key, 'hallway')),
+         ScreenDisplay(DisplayConfig(filter_key, filter_key, 'canny')),
+         ScreenDisplay(DisplayConfig(phosphene_key, phosphene_key, 'basic')),
     ]
 
-    config = Config(environment_getter=HallwayEnv,
-                    agent_getter=HumanAgent,
-                    environment_config=environment_config,
-                    transform_configs=transform_configs,
-                    agent_config=agent_config,
-                    display_configs=display_configs,
-                    )
+    vr_display = VRDisplay(VRDisplayConfig('phosphenes_vr', phosphene_key,
+                                           waitkey_delay=0))
 
-    evaluate(config)
+    config = Config(environment_config,
+                    transforms,
+                    agent_config,
+                    displays,
+                    vr_display,
+                    device)
 
+    pipeline = Pipeline(config)
+
+    pipeline.run()
+
+
+if __name__ == '__main__':
+    main()
     sys.exit()

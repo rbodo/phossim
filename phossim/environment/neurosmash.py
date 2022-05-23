@@ -1,10 +1,9 @@
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
 import socket
 import gym
-from gym import spaces
 
 
 @dataclass
@@ -15,26 +14,22 @@ class NeurosmashConfig:
     render_mode: Optional[str] = None
 
 
-def get_neurosmash_environment(config: NeurosmashConfig) -> gym.Env:
-    return NeurosmashEnv(**asdict(config))
-
-
-class NeurosmashEnv(gym.Env):
+class Neurosmash(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array']}
 
-    def __init__(self, ip: str, port: int, resolution: int,
-                 render_mode: Optional[str] = None):
+    def __init__(self, config: NeurosmashConfig):
 
-        if render_mode is not None:
-            assert render_mode in self.metadata['render_modes']
+        if config.render_mode is not None:
+            assert config.render_mode in self.metadata['render_modes']
 
         super().__init__()
-        self._shape = (resolution, resolution, 3)
-        self.action_space = spaces.Discrete(4)
-        self.observation_space = spaces.Box(low=0, high=255,
-                                            shape=self._shape, dtype=np.uint8)
+        self._shape = (config.resolution, config.resolution, 3)
+        self.action_space = gym.spaces.Discrete(4)
+        self.observation_space = gym.spaces.Box(low=0, high=255,
+                                                shape=self._shape,
+                                                dtype=np.uint8)
         self._client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._client.connect((ip, port))
+        self._client.connect((config.ip, config.port))
         self._state = None
 
     def step(self, action):

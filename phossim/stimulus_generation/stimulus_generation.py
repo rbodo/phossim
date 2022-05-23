@@ -4,10 +4,8 @@ import gym
 import numpy as np
 import torch
 
-from phossim.config import DEVICE, DTYPE
-from phossim.phosphene_simulation.realistic import \
-    get_phosphene_map
 from phossim.transforms import Transform, TransformConfig
+from phossim.phosphene_simulation.realistic import get_phosphene_map
 
 
 @dataclass
@@ -47,6 +45,7 @@ class RealisticStimulusGenerator(Transform):
     def observation(self, observation):
         """Create stimulation vector from sensor signal via electrode map."""
 
-        sensor_signal = torch.tensor(observation, dtype=DTYPE, device=DEVICE)
+        sensor_signal = torch.tensor(observation, dtype=self.config.DTYPE,
+                                     device=self.config.DEVICE)
 
         return torch.tensordot(self.electrode_map, sensor_signal)

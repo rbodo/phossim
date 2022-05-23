@@ -3,7 +3,6 @@ from dataclasses import dataclass
 import numpy as np
 import socket
 import gym
-from gym import spaces
 
 
 @dataclass
@@ -14,7 +13,7 @@ class HallwayConfig:
     size: int = 128
 
 
-class HallwayEnv(gym.Env):
+class Hallway(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array']}
 
     def __init__(self, config: HallwayConfig):
@@ -23,7 +22,7 @@ class HallwayEnv(gym.Env):
         self._size = config.size
         self._num_channels = 16
         self._num_actions = 3
-        self.action_space = spaces.Discrete(self._num_actions)
+        self.action_space = gym.spaces.Discrete(self._num_actions)
         self.observation_space = config.observation_space
         self._client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._client.connect((config.ip, config.port))

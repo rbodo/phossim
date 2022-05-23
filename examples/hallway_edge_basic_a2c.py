@@ -1,26 +1,49 @@
+import os
 import sys
+from dataclasses import dataclass
 from pathlib import Path
+from typing import List, Tuple, Type, Optional
 
 import gym
 import numpy as np
 
-from phossim.filtering import CannyFilter, CannyConfig
-from phossim.filtering import \
-    GrayscaleTransform, GrayscaleConfig
-from phossim.phosphene_simulation import \
-    PhospheneSimulationBasic, BasicPhospheneSimulationConfig
-from phossim.transforms import Transform, TransformConfig
-from phossim.pipeline import evaluate, train
-from phossim.config import Config
-from phossim.environment import HallwayConfig, \
-    HallwayEnv
-from phossim.agent import get_agent, \
-    StableBaselineAgentConfig, TrainingConfig
+from phossim.pipeline import BasePipeline
+from phossim.environment.hallway import HallwayConfig, Hallway
+from phossim.transforms import (Transform, TransformConfig, TimeLimitConfig,
+                                MonitorConfig, MonitorTransform,
+                                TimeLimitTransform, wrap_transforms)
+from phossim.filtering.preprocessing import GrayscaleTransform, GrayscaleConfig
+from phossim.filtering.edge import CannyFilter, CannyConfig
+from phossim.phosphene_simulation.basic import (PhospheneSimulationBasic,
+                                                BasicPhospheneSimulationConfig)
 from phossim.recording import RecordingConfig, RecordingTransform
-from phossim.rendering import DisplayConfig, ScreenDisplay
+from phossim.agent.stable_baselines import (get_agent, TrainingConfig,
+                                            StableBaselineAgentConfig)
+from phossim.rendering import (DisplayConfig, ScreenDisplay, DisplayList,
+                               Display)
 
 
-if __name__ == '__main__':
+@dataclass
+class Config:
+    environment_config: HallwayConfig
+    transforms: List[Tuple[Type[Transform], TransformConfig]]
+    agent_config: StableBaselineAgentConfig
+    displays: List[Display]
+    device: Optional[str] = 'cpu'
+
+
+class Pipeline(BasePipeline):
+    def __init__(self, config: Config):
+        super().__init__()
+        self.environment = Hallway(config.environment_config)
+        self.environment = wrap_transforms(self.environment, config.transforms)
+        self.agent = get_agent(self.environment, config.agent_config)
+        self.renderer = DisplayList(config.displays)
+
+
+def main():
+    os.environ['CUDA_VISIBLE_DEVICES'] = '4'
+    device = 'cuda:0'
     input_key = 'input'
     filter_key = 'filtered_observation'
     phosphene_key = 'phosphenes'
@@ -42,7 +65,7 @@ if __name__ == '__main__':
 
     environment_config = HallwayConfig(observation_space, size=size)
 
-    transform_configs = [
+    transforms = [
         (Transform, TransformConfig(input_key)),
         (RecordingTransform, RecordingConfig(path_recording,
                                              episode_trigger=recording_trigger,
@@ -61,30 +84,34 @@ if __name__ == '__main__':
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='phosphenes')),
+        (TimeLimitTransform, TimeLimitConfig()),
+        (MonitorTransform, MonitorConfig())
     ]
 
     agent_config = StableBaselineAgentConfig(
         path_model, 'A2C', 'CnnPolicy', {'tensorboard_log': path_tensorboard})
 
-    display_configs = [
-         (ScreenDisplay, DisplayConfig(input_key, input_key, 'hallway')),
-         (ScreenDisplay, DisplayConfig(filter_key, filter_key, 'canny')),
-         (ScreenDisplay, DisplayConfig(phosphene_key, phosphene_key, 'basic')),
+    displays = [
+         ScreenDisplay(DisplayConfig(input_key, input_key, 'hallway')),
+         ScreenDisplay(DisplayConfig(filter_key, filter_key, 'canny')),
+         ScreenDisplay(DisplayConfig(phosphene_key, phosphene_key, 'basic')),
     ]
 
+    config = Config(environment_config,
+                    transforms,
+                    agent_config,
+                    displays,
+                    device)
+
+    pipeline = Pipeline(config)
+
     training_config = TrainingConfig(int(1e6))
+    pipeline.agent.learn(**training_config.asdict())
+    pipeline.agent.save(config.agent_config.path_model)
 
-    config = Config(environment_getter=HallwayEnv,
-                    agent_getter=get_agent,
-                    environment_config=environment_config,
-                    transform_configs=transform_configs,
-                    agent_config=agent_config,
-                    display_configs=display_configs,
-                    training_config=training_config,
-                    )
+    pipeline.run()
 
-    train(config)
 
-    evaluate(config)
-
+if __name__ == '__main__':
+    main()
     sys.exit()

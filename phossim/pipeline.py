@@ -1,13 +1,15 @@
+from __future__ import annotations
+
 from itertools import count
-from typing import Union
+from typing import Union, TYPE_CHECKING
 
 import gym
 from stable_baselines3.common.base_class import BaseAlgorithm
 
-from phossim.agent.human import HumanAgent
-from phossim.rendering import DisplayList
-
-QUIT_KEY = 'q'
+from phossim import QUIT_KEY
+if TYPE_CHECKING:
+    from phossim.agent.human import HumanAgent
+    from phossim.rendering import DisplayList
 
 
 class BasePipeline:

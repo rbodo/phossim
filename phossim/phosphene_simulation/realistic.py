@@ -2,7 +2,6 @@ import gym
 import numpy as np
 import torch
 
-from phossim.config import DTYPE, DEVICE
 from phossim.transforms import Transform, TransformConfig
 
 
