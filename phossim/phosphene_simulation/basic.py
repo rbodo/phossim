@@ -9,8 +9,7 @@ from phossim.transforms import Transform, TransformConfig
 
 
 @dataclass
-class BasicPhospheneSimulationConfig(TransformConfig):
-    image_size: Tuple[int, int]
+class PhospheneSimulationConfig(TransformConfig):
     phosphene_resolution: Tuple[int, int] = (32, 32)
     phosphene_intensity: float = 8
     normalize_phosphenes: bool = True
@@ -21,44 +20,15 @@ class BasicPhospheneSimulationConfig(TransformConfig):
     info_key = 'phosphenes'
 
 
-def create_regular_grid(phosphene_resolution, size, jitter, intensity_var):
-    """Returns regular eqiodistant phosphene grid of shape <size> with
-    resolution <phosphene_resolution> for variable phosphene intensity with
-    jittered positions"""
-
-    grid = np.zeros(size)
-    phosphene_spacing = np.divide(size, phosphene_resolution)
-    xrange = np.linspace(0, size[0], phosphene_resolution[0], endpoint=False) \
-        + phosphene_spacing[0] / 2
-    yrange = np.linspace(0, size[1], phosphene_resolution[1], endpoint=False) \
-        + phosphene_spacing[1] / 2
-    for x in xrange:
-        for y in yrange:
-            deviation = \
-                jitter * (2 * np.random.rand(2) - 1) * phosphene_spacing
-            intensity = intensity_var * (np.random.rand() - 0.5) + 1
-            rx = \
-                np.clip(np.round(x + deviation[0]), 0, size[0] - 1).astype(int)
-            ry = \
-                np.clip(np.round(y + deviation[1]), 0, size[1] - 1).astype(int)
-            grid[rx, ry] = intensity
-    return grid
-
-
-class PhospheneSimulationBasic(Transform):
-    def __init__(self, env: gym.Env, config: BasicPhospheneSimulationConfig):
-        """Phosphene simulator class to create gaussian-based phosphene
+class PhospheneSimulation(Transform):
+    def __init__(self, env: gym.Env, config: PhospheneSimulationConfig):
+        """
+        Phosphene simulator class to create gaussian-based phosphene
         simulations from a stimulus pattern.
-
-        aperture:
-            Receptive field of each phosphene (uses dilation of the stimulation
-            pattern to achieve this)
-        sigma:
-            The size parameter for the gaussian.
         """
 
         super().__init__(env, config)
-        size = config.image_size
+        size = env.observation_space.shape[:-1]
         phosphene_resolution = config.phosphene_resolution
         self.intensity = config.phosphene_intensity
         self._normalize = config.normalize_phosphenes
@@ -88,3 +58,27 @@ class PhospheneSimulationBasic(Transform):
             phosphenes = 255 * phosphenes / (phosphenes.max() or 1)
 
         return np.atleast_3d(phosphenes).astype('uint8')
+
+
+def create_regular_grid(phosphene_resolution, size, jitter, intensity_var):
+    """Returns regular eqiodistant phosphene grid of shape <size> with
+    resolution <phosphene_resolution> for variable phosphene intensity with
+    jittered positions"""
+
+    grid = np.zeros(size)
+    phosphene_spacing = np.divide(size, phosphene_resolution)
+    xrange = np.linspace(0, size[0], phosphene_resolution[0], endpoint=False) \
+        + phosphene_spacing[0] / 2
+    yrange = np.linspace(0, size[1], phosphene_resolution[1], endpoint=False) \
+        + phosphene_spacing[1] / 2
+    for x in xrange:
+        for y in yrange:
+            deviation = \
+                jitter * (2 * np.random.rand(2) - 1) * phosphene_spacing
+            intensity = intensity_var * (np.random.rand() - 0.5) + 1
+            rx = \
+                np.clip(np.round(x + deviation[0]), 0, size[0] - 1).astype(int)
+            ry = \
+                np.clip(np.round(y + deviation[1]), 0, size[1] - 1).astype(int)
+            grid[rx, ry] = intensity
+    return grid

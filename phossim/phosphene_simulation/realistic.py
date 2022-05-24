@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import gym
 import numpy as np
 import torch
@@ -5,73 +7,38 @@ import torch
 from phossim.transforms import Transform, TransformConfig
 
 
-def get_eccentricity_scaling(r):
-    """Spatial phosphene characteristics"""
-    return 2 * r + 0.5  # TODO: PLAUSIBLE CORTICAL MAGNIFICATION
+@dataclass
+class PhospheneSimulationConfig(TransformConfig):
+    observation_space: gym.Space
+    intensity_decay: float = 0.4
+    dtype: torch.dtype = torch.float32
+    device: str = 'cpu'
 
 
-def get_phosphene_map(num_phosphenes, resolution):
-    # Cartesian coordinate system for the visual field
-    x = torch.arange(resolution[0], dtype=DTYPE, device=DEVICE)
-    y = torch.arange(resolution[1], dtype=DTYPE, device=DEVICE)
-    grid = torch.meshgrid(x, y, indexing='ij')
-
-    d_min = min(resolution)
-
-    # Polar coordinates
-    phi = 2 * torch.pi * torch.rand(num_phosphenes, dtype=DTYPE, device=DEVICE)
-    r = d_min / 2 * torch.rand(num_phosphenes, dtype=DTYPE, device=DEVICE) ** 2
-
-    # Convert to cartesian indices
-    xmax = resolution[1] - 1
-    ymax = resolution[0] - 1
-    x_offset = torch.round(r * torch.cos(phi) + xmax / 2)
-    y_offset = torch.round(r * torch.sin(phi) + ymax / 2)
-    x_offset = torch.clip(x_offset, 0, xmax)
-    y_offset = torch.clip(y_offset, 0, ymax)
-    x_offset = torch.reshape(x_offset, (-1, 1, 1))
-    y_offset = torch.reshape(y_offset, (-1, 1, 1))
-
-    # Calculate distance map for every element wrt center of phosphene
-    phosphene_map = torch.sqrt((torch.unsqueeze(grid[0], 0) - y_offset) ** 2 +
-                               (torch.unsqueeze(grid[1], 0) - x_offset) ** 2)
-    # Sigma at start of simulation
-    phosphene_sizes = get_eccentricity_scaling(r / d_min)
-
-    return phosphene_map, torch.reshape(phosphene_sizes, (-1, 1, 1))
-
-
-class GaussianSimulator(Transform):
-    def __init__(self, env: gym.Env, config: TransformConfig):
-        """
-        phosphene_map: ndarray
-            A stack of phosphene mappings (i, j, k)
-        phosphene_sizes: ndarray
-            A vector of phosphene sizes at start of simulation (i,)
-        intensity_decay: float
-
-        Dimensions i = n_phosphenes, j = pixels_y , k = pixels_x
-        """
-
+class PhospheneSimulation(Transform):
+    def __init__(self, env: gym.Env, config: PhospheneSimulationConfig):
         super().__init__(env, config)
-        self.phosphene_map = config.phosphene_map
-        self.phosphene_sizes = config.phosphene_sizes
-        self.intensity_decay = config.PHOSPHENE_INTENSITY_DECAY
-        self.neural_activation = torch.zeros(len(self.phosphene_map),
-                                             dtype=DTYPE, device=DEVICE)
+
+        self._observation_space = config.observation_space
+        self.intensity_decay = config.intensity_decay
+        self.dtype = config.dtype
+        self.device = config.device
+        num_phosphenes = self.env.observation_space.shape[0]
+        self.neural_activation = torch.zeros(num_phosphenes, dtype=self.dtype,
+                                             device=self.device)
         self.gaussian_filters = None
-        # Not needed any more; save space
-        del config.phosphene_map
-        del config.phosphene_sizes
 
     def get_gaussian_filters(self):
         """Generate gaussian activation maps, based on sigmas and phosphene
         mapping."""
 
-        alpha = 1 / (self.phosphene_sizes * np.sqrt(np.pi))
-        beta = 1 / (2 * self.phosphene_sizes ** 2)
+        phosphene_sizes = self.env.phosphene_sizes
+        phosphene_map = self.env.phosphene_map
 
-        return torch.exp(-self.phosphene_map ** 2 * beta) * alpha
+        alpha = 1 / (phosphene_sizes * np.sqrt(np.pi))
+        beta = 1 / (2 * phosphene_sizes ** 2)
+
+        return torch.exp(-phosphene_map ** 2 * beta) * alpha
 
     def _update(self, stimulus_pattern):
         """Adjust state as function of previous state and current stimulation.
@@ -104,4 +71,4 @@ class GaussianSimulator(Transform):
         phosphenes = phosphenes.clip(0, 500)
         phosphenes = 255 * phosphenes / phosphenes.max()
 
-        return phosphenes.cpu().numpy().astype('uint8')
+        return np.atleast_3d(phosphenes.cpu().numpy().astype('uint8'))

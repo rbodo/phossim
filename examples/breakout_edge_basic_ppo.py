@@ -11,8 +11,8 @@ from phossim.transforms import (Transform, TransformConfig, wrap_transforms,
                                 TimeLimitConfig, MonitorConfig,
                                 TimeLimitTransform, MonitorTransform)
 from phossim.filtering.edge import CannyConfig, CannyFilter
-from phossim.phosphene_simulation.basic import (BasicPhospheneSimulationConfig,
-                                                PhospheneSimulationBasic)
+from phossim.phosphene_simulation.basic import (PhospheneSimulationConfig,
+                                                PhospheneSimulation)
 from phossim.recording import RecordingConfig, RecordingTransform
 from phossim.agent.stable_baselines import (get_agent, TrainingConfig,
                                             StableBaselineAgentConfig)
@@ -70,8 +70,7 @@ def main():
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='filtered')),
-        (PhospheneSimulationBasic,
-         BasicPhospheneSimulationConfig(phosphene_key, image_size=(84, 84))),
+        (PhospheneSimulation, PhospheneSimulationConfig(phosphene_key)),
         (RecordingTransform, RecordingConfig(path_recording,
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,

@@ -13,8 +13,10 @@ from phossim.transforms import Transform, TransformConfig, wrap_transforms
 from phossim.filtering.preprocessing import (GrayscaleTransform, ResizeConfig,
                                              GrayscaleConfig, ResizeTransform)
 from phossim.filtering.edge import CannyFilter, CannyConfig
-from phossim.phosphene_simulation.basic import (PhospheneSimulationBasic,
-                                                BasicPhospheneSimulationConfig)
+from phossim.stimulus_generation.stimulus_generation import (
+    StimulusGenerator, StimulusGeneratorConfig)
+from phossim.phosphene_simulation.realistic import (PhospheneSimulation,
+                                                    PhospheneSimulationConfig)
 from phossim.recording import RecordingConfig, RecordingTransform
 from phossim.agent.human import HumanAgent, HumanAgentConfig
 from phossim.rendering import (DisplayConfig, ScreenDisplay, DisplayList,
@@ -52,18 +54,26 @@ def main():
     video_length = 300
     def recording_trigger(episode): return episode % 10000 == 0
 
+    phosphene_resolution = (32, 32)
     size_in = 128
     size_out = 512
     shape_in = (size_in, size_in, 3)
     shape_resized = (size_out, size_out, 3)
     shape_gray = (size_out, size_out, 1)
-    observation_space_in = gym.spaces.Box(low=0, high=255,
-                                          shape=shape_in, dtype=np.uint8)
+    shape_stimulus = (np.prod(phosphene_resolution),)
+    observation_space_in = gym.spaces.Box(low=0, high=255, shape=shape_in,
+                                          dtype=np.uint8)
     observation_space_resized = gym.spaces.Box(low=0, high=255,
                                                shape=shape_resized,
                                                dtype=np.uint8)
-    observation_space_gray = gym.spaces.Box(low=0, high=255,
-                                            shape=shape_gray, dtype=np.uint8)
+    observation_space_gray = gym.spaces.Box(low=0, high=255, shape=shape_gray,
+                                            dtype=np.uint8)
+    observation_space_stimulus = gym.spaces.Box(low=0, high=np.inf,
+                                                shape=shape_stimulus,
+                                                dtype=np.float)
+    observation_space_phosphenes = gym.spaces.Box(low=0, high=255,
+                                                  shape=shape_gray,
+                                                  dtype=np.uint8)
 
     environment_config = HallwayConfig(observation_space_in, size=size_in)
 
@@ -80,9 +90,12 @@ def main():
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='filtered')),
-        (PhospheneSimulationBasic,
-         BasicPhospheneSimulationConfig(phosphene_key,
-                                        image_size=(size_out, size_out))),
+        (StimulusGenerator, StimulusGeneratorConfig('stimulus',
+                                                    observation_space_stimulus,
+                                                    phosphene_resolution)),
+        (PhospheneSimulation,
+         PhospheneSimulationConfig(phosphene_key,
+                                   observation_space_phosphenes)),
         (RecordingTransform, RecordingConfig(path_recording,
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,

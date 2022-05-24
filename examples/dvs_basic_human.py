@@ -10,8 +10,8 @@ import numpy as np
 from phossim.pipeline import BasePipeline
 from phossim.environment.camera import DVSConfig, DVSFrameStream
 from phossim.transforms import Transform, TransformConfig, wrap_transforms
-from phossim.phosphene_simulation.basic import (PhospheneSimulationBasic,
-                                                BasicPhospheneSimulationConfig)
+from phossim.phosphene_simulation.basic import (PhospheneSimulation,
+                                                PhospheneSimulationConfig)
 from phossim.recording import RecordingConfig, RecordingTransform
 from phossim.agent.human import HumanAgentConfig, HumanAgent
 from phossim.rendering import (DisplayConfig, ScreenDisplay, Display,
@@ -60,8 +60,7 @@ def main():
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='input')),
-        (PhospheneSimulationBasic,
-         BasicPhospheneSimulationConfig(phosphene_key, image_size=shape[:-1])),
+        (PhospheneSimulation, PhospheneSimulationConfig(phosphene_key)),
         (RecordingTransform, RecordingConfig(path_recording,
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
