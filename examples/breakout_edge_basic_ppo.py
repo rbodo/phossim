@@ -15,7 +15,7 @@ from phossim.phosphene_simulation.basic import (PhospheneSimulationConfig,
                                                 PhospheneSimulation)
 from phossim.recording import RecordingConfig, RecordingTransform
 from phossim.agent.stable_baselines import (get_agent, TrainingConfig,
-                                            StableBaselineAgentConfig)
+                                            AgentConfig)
 from phossim.rendering import (DisplayConfig, ScreenDisplay, DisplayList,
                                Display)
 
@@ -24,7 +24,7 @@ from phossim.rendering import (DisplayConfig, ScreenDisplay, DisplayList,
 class Config:
     environment_config: AtariConfig
     transforms: List[Tuple[Type[Transform], TransformConfig]]
-    agent_config: StableBaselineAgentConfig
+    agent_config: AgentConfig
     displays: List[Display]
     device: Optional[str] = 'cpu'
 
@@ -79,7 +79,7 @@ def main():
         (MonitorTransform, MonitorConfig())
     ]
 
-    agent_config = StableBaselineAgentConfig(
+    agent_config = AgentConfig(
         path_model, 'PPO', 'MlpPolicy', {'tensorboard_log': path_tensorboard})
 
     displays = [

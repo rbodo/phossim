@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, Optional
 
 import cv2
 import gym
@@ -18,6 +18,7 @@ class PhospheneSimulationConfig(TransformConfig):
     intensity_var: float = 0.8
     aperture: float = 0.66
     info_key = 'phosphenes'
+    observation_space: Optional[gym.Space] = None
 
 
 class PhospheneSimulation(Transform):
@@ -28,6 +29,8 @@ class PhospheneSimulation(Transform):
         """
 
         super().__init__(env, config)
+        if config.observation_space is not None:
+            self.observation_space = config.observation_space
         size = env.observation_space.shape[:-1]
         phosphene_resolution = config.phosphene_resolution
         self.intensity = config.phosphene_intensity

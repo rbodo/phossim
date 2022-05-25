@@ -6,26 +6,26 @@ from typing import List, Tuple, Type, Optional
 
 import gym
 import numpy as np
+from torch import nn
 
 from phossim.pipeline import BasePipeline
-from phossim.environment.hallway import HallwayConfig, Hallway
-from phossim.transforms import (Transform, TransformConfig, TimeLimitConfig,
-                                MonitorConfig, MonitorTransform,
-                                TimeLimitTransform, wrap_transforms)
-from phossim.filtering.preprocessing import GrayscaleTransform, GrayscaleConfig
-from phossim.filtering.edge import CannyFilter, CannyConfig
-from phossim.phosphene_simulation.basic import (PhospheneSimulation,
-                                                PhospheneSimulationConfig)
+from phossim.environment.openai_gym import (GymConfig, AtariConfig,
+                                            get_atari_environment)
+from phossim.transforms import (Transform, TransformConfig, wrap_transforms,
+                                TimeLimitConfig, MonitorConfig,
+                                TimeLimitTransform, MonitorTransform)
+from phossim.filtering.e2e import AutoencoderFilter, AutoencoderConfig
+from phossim.phosphene_simulation.basic import (PhospheneSimulationConfig,
+                                                PhospheneSimulation)
 from phossim.recording import RecordingConfig, RecordingTransform
-from phossim.agent.stable_baselines import (get_agent, TrainingConfig,
-                                            AgentConfig)
+from phossim.agent.e2e import TrainingConfig, AgentConfig, E2ePPO
 from phossim.rendering import (DisplayConfig, ScreenDisplay, DisplayList,
                                Display)
 
 
 @dataclass
 class Config:
-    environment_config: HallwayConfig
+    environment_config: AtariConfig
     transforms: List[Tuple[Type[Transform], TransformConfig]]
     agent_config: AgentConfig
     displays: List[Display]
@@ -35,10 +35,29 @@ class Config:
 class Pipeline(BasePipeline):
     def __init__(self, config: Config):
         super().__init__()
-        self.environment = Hallway(config.environment_config)
+        self.environment = get_atari_environment(config.environment_config)
         self.environment = wrap_transforms(self.environment, config.transforms)
-        self.agent = get_agent(self.environment, config.agent_config)
+        self.agent = E2ePPO(config.agent_config.policy_id, self.environment,
+                            **config.agent_config.kwargs)
         self.renderer = DisplayList(config.displays)
+
+
+class Encoder(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv = nn.Conv2d(1, 1, 1)
+
+    def forward(self, x):
+        return nn.ReLU()(self.conv(x))
+
+
+class Decoder(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv = nn.Conv2d(1, 1, 1)
+
+    def forward(self, x):
+        return nn.ReLU()(self.conv(x))
 
 
 def main():
@@ -47,23 +66,26 @@ def main():
     input_key = 'input'
     filter_key = 'filtered_observation'
     phosphene_key = 'phosphenes'
-    path_base = Path('~/Data/phosphenes/hallway').expanduser()
+    path_base = Path('~/Data/phosphenes/atari').expanduser()
     path_recording = path_base.joinpath('recording')
     path_tensorboard = path_base.joinpath('log')
-    path_model = path_base.joinpath('models/A2C_hallway')
-    path_model.parent.mkdir(parents=True, exist_ok=True)
+    path_model = path_base.joinpath('models/PPO_breakout')
+    path_model.parent.mkdir(exist_ok=True)
     video_length = 300
     def recording_trigger(episode): return episode % 10000 == 0
 
-    size = 128
-    shape = (size, size, 3)
-    shape_gray = (size, size, 1)
-    observation_space = gym.spaces.Box(low=0, high=255,
-                                       shape=shape, dtype=np.uint8)
-    observation_space_gray = gym.spaces.Box(low=0, high=255,
-                                            shape=shape_gray, dtype=np.uint8)
+    shape = (84, 84, 1)
+    observation_space_stimulus = gym.spaces.Box(low=0, high=1, shape=shape,
+                                                dtype=float)
+    observation_space_phosphenes = gym.spaces.Box(low=0, high=255, shape=shape,
+                                                  dtype=np.uint8)
 
-    environment_config = HallwayConfig(observation_space, size=size)
+    environment_config = AtariConfig(
+        GymConfig('ALE/Breakout-v5',
+                  {'render_mode': 'rgb_array',
+                   'frameskip': 1,  # Handled by AtariWrapper
+                   'repeat_action_probability': 0,
+                   'full_action_space': True}))
 
     transforms = [
         (Transform, TransformConfig(input_key)),
@@ -71,13 +93,15 @@ def main():
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='input')),
-        (GrayscaleTransform, GrayscaleConfig(None, observation_space_gray)),
-        (CannyFilter, CannyConfig(filter_key, sigma=1)),
+        (AutoencoderFilter, AutoencoderConfig(filter_key,
+                                              observation_space_stimulus,
+                                              Encoder(), Decoder())),
         (RecordingTransform, RecordingConfig(path_recording,
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='filtered')),
-        (PhospheneSimulation, PhospheneSimulationConfig(phosphene_key)),
+        (PhospheneSimulation, PhospheneSimulationConfig(
+            phosphene_key, observation_space=observation_space_phosphenes)),
         (RecordingTransform, RecordingConfig(path_recording,
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
@@ -87,11 +111,11 @@ def main():
     ]
 
     agent_config = AgentConfig(
-        path_model, 'A2C', 'CnnPolicy', {'tensorboard_log': path_tensorboard})
+        path_model, 'MlpPolicy', {'tensorboard_log': path_tensorboard})
 
     displays = [
-         ScreenDisplay(DisplayConfig(input_key, input_key, 'hallway')),
-         ScreenDisplay(DisplayConfig(filter_key, filter_key, 'canny')),
+         ScreenDisplay(DisplayConfig(input_key, input_key, 'gym')),
+         ScreenDisplay(DisplayConfig(filter_key, filter_key, 'e2e')),
          ScreenDisplay(DisplayConfig(phosphene_key, phosphene_key, 'basic')),
     ]
 
@@ -103,7 +127,7 @@ def main():
 
     pipeline = Pipeline(config)
 
-    training_config = TrainingConfig(int(1e6))
+    training_config = TrainingConfig(int(1e7))
     pipeline.agent.learn(**training_config.asdict())
     pipeline.agent.save(config.agent_config.path_model)
 

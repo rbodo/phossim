@@ -23,15 +23,14 @@ class TrainingConfig:
 
 
 @dataclass
-class StableBaselineAgentConfig:
+class AgentConfig:
     path_model: Path
     model_id: str
     policy_id: str
     kwargs: Optional[dict] = field(default_factory=dict)
 
 
-def get_agent(environment: gym.Env,
-              config: StableBaselineAgentConfig) -> BaseAlgorithm:
+def get_agent(environment: gym.Env, config: AgentConfig) -> BaseAlgorithm:
     agent_class = getattr(stable_baselines3, config.model_id)
     agent = agent_class(config.policy_id, environment, **config.kwargs)
     return agent
