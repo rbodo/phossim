@@ -19,8 +19,7 @@ from phossim.phosphene_simulation.basic import (PhospheneSimulation,
 from phossim.recording import RecordingConfig, RecordingTransform
 from phossim.agent.stable_baselines import (get_agent, TrainingConfig,
                                             AgentConfig)
-from phossim.rendering import (DisplayConfig, ScreenDisplay, DisplayList,
-                               Display)
+from phossim.rendering import Viewer, ViewerConfig, ViewerList
 
 
 @dataclass
@@ -28,7 +27,7 @@ class Config:
     environment_config: HallwayConfig
     transforms: List[Tuple[Type[Transform], TransformConfig]]
     agent_config: AgentConfig
-    displays: List[Display]
+    viewers: List[Viewer]
     device: Optional[str] = 'cpu'
 
 
@@ -38,7 +37,7 @@ class Pipeline(BasePipeline):
         self.environment = Hallway(config.environment_config)
         self.environment = wrap_transforms(self.environment, config.transforms)
         self.agent = get_agent(self.environment, config.agent_config)
-        self.renderer = DisplayList(config.displays)
+        self.renderer = ViewerList(config.viewers)
 
 
 def main():
@@ -90,9 +89,10 @@ def main():
         path_model, 'A2C', 'CnnPolicy', {'tensorboard_log': path_tensorboard})
 
     displays = [
-         ScreenDisplay(DisplayConfig(input_key, input_key, 'hallway')),
-         ScreenDisplay(DisplayConfig(filter_key, filter_key, 'canny')),
-         ScreenDisplay(DisplayConfig(phosphene_key, phosphene_key, 'basic')),
+         Viewer(ViewerConfig(shape, input_key, input_key, 'hallway')),
+         Viewer(ViewerConfig(shape_gray, filter_key, filter_key, 'canny')),
+         Viewer(ViewerConfig(shape_gray, phosphene_key, phosphene_key,
+                             'basic')),
     ]
 
     config = Config(environment_config,

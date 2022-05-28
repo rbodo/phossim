@@ -3,7 +3,6 @@ from typing import Union, List, Tuple, Type
 
 import cv2
 import gym
-from gym.utils.env_checker import check_env
 from stable_baselines3.common.monitor import Monitor
 
 
@@ -42,12 +41,11 @@ class Transform(gym.ObservationWrapper):
 
 
 def wrap_transforms(environment: gym.Env,
-                    transforms: List[Tuple[Type[Transform], TransformConfig]],
-                    skip_render_check: bool = False) -> gym.Env:
+                    transforms: List[Tuple[Type[Transform],
+                                           TransformConfig]]) -> gym.Env:
     for transform_class, transform_config in transforms:
         environment = transform_class(environment, transform_config)
-    environment.reset()
-    check_env(environment, skip_render_check=skip_render_check)
+    # check_env(environment, skip_render_check=False)
     return environment
 
 

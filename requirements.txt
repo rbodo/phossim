@@ -4,3 +4,6 @@ autorom[accept-rom-license]
 stable_baselines3
 opencv-python
 tensorboard
+torch
+dv
+pyglet

@@ -6,6 +6,7 @@ from typing import List, Tuple, Type, Optional
 
 import gym
 import numpy as np
+from pyglet.window import key
 
 from phossim.pipeline import BasePipeline
 from phossim.environment.hallway import HallwayConfig, Hallway
@@ -19,8 +20,8 @@ from phossim.phosphene_simulation.realistic import (PhospheneSimulation,
                                                     PhospheneSimulationConfig)
 from phossim.recording import RecordingConfig, RecordingTransform
 from phossim.agent.human import HumanAgent, HumanAgentConfig
-from phossim.rendering import (DisplayConfig, ScreenDisplay, DisplayList,
-                               Display, VRDisplay, VRDisplayConfig)
+from phossim.rendering import (Viewer, ViewerConfig, ViewerList, VRViewer,
+                               VRViewerConfig)
 
 
 @dataclass
@@ -28,8 +29,8 @@ class Config:
     environment_config: HallwayConfig
     transforms: List[Tuple[Type[Transform], TransformConfig]]
     agent_config: HumanAgentConfig
-    displays: List[Display]
-    vr_display: VRDisplay
+    viewers: List[Viewer]
+    vr_viewer: VRViewer
     device: Optional[str] = 'cpu'
 
 
@@ -38,9 +39,9 @@ class Pipeline(BasePipeline):
         super().__init__()
         self.environment = Hallway(config.environment_config)
         self.environment = wrap_transforms(self.environment, config.transforms)
-        self.agent = HumanAgent(self.environment, config.vr_display,
+        self.agent = HumanAgent(self.environment, config.vr_viewer,
                                 config.agent_config)
-        self.renderer = DisplayList(config.displays)
+        self.renderer = ViewerList(config.viewers)
 
 
 def main():
@@ -70,7 +71,7 @@ def main():
                                             dtype=np.uint8)
     observation_space_stimulus = gym.spaces.Box(low=0, high=np.inf,
                                                 shape=shape_stimulus,
-                                                dtype=np.float)
+                                                dtype=float)
     observation_space_phosphenes = gym.spaces.Box(low=0, high=255,
                                                   shape=shape_gray,
                                                   dtype=np.uint8)
@@ -102,16 +103,17 @@ def main():
                                              name_prefix='phosphenes')),
     ]
 
-    agent_config = HumanAgentConfig({'w': 0, 'a': 1, 'd': 2})
+    agent_config = HumanAgentConfig({key.W: 0, key.A: 1, key.D: 2})
 
     displays = [
-         ScreenDisplay(DisplayConfig(input_key, input_key, 'hallway')),
-         ScreenDisplay(DisplayConfig(filter_key, filter_key, 'canny')),
-         ScreenDisplay(DisplayConfig(phosphene_key, phosphene_key, 'basic')),
+         Viewer(ViewerConfig(shape_in, input_key, input_key, 'hallway')),
+         Viewer(ViewerConfig(shape_gray, filter_key, filter_key, 'canny')),
+         Viewer(ViewerConfig(shape_gray, phosphene_key, phosphene_key,
+                             'basic')),
     ]
 
-    vr_display = VRDisplay(VRDisplayConfig('phosphenes_vr', phosphene_key,
-                                           waitkey_delay=0))
+    vr_display = VRViewer(VRViewerConfig((1600, 2880, 1), 'phosphenes_vr',
+                                         phosphene_key))
 
     config = Config(environment_config,
                     transforms,

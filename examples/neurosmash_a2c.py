@@ -12,8 +12,7 @@ from phossim.transforms import (Transform, TransformConfig, TimeLimitConfig,
 from phossim.recording import RecordingConfig, RecordingTransform
 from phossim.agent.stable_baselines import (get_agent, TrainingConfig,
                                             AgentConfig)
-from phossim.rendering import (DisplayConfig, ScreenDisplay, DisplayList,
-                               Display)
+from phossim.rendering import Viewer, ViewerConfig, ViewerList
 
 
 @dataclass
@@ -21,7 +20,7 @@ class Config:
     environment_config: NeurosmashConfig
     transforms: List[Tuple[Type[Transform], TransformConfig]]
     agent_config: AgentConfig
-    displays: List[Display]
+    viewers: List[Viewer]
     device: Optional[str] = 'cpu'
 
 
@@ -31,7 +30,7 @@ class Pipeline(BasePipeline):
         self.environment = Neurosmash(config.environment_config)
         self.environment = wrap_transforms(self.environment, config.transforms)
         self.agent = get_agent(self.environment, config.agent_config)
-        self.renderer = DisplayList(config.displays)
+        self.renderer = ViewerList(config.viewers)
 
 
 def main():
@@ -62,7 +61,8 @@ def main():
         path_model, 'A2C', 'CnnPolicy', {'tensorboard_log': path_tensorboard})
 
     displays = [
-         ScreenDisplay(DisplayConfig(input_key, input_key, 'neurosmash')),
+         Viewer(ViewerConfig((128, 128, 1), input_key, input_key,
+                             'neurosmash')),
     ]
 
     config = Config(environment_config,

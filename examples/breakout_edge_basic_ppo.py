@@ -16,8 +16,7 @@ from phossim.phosphene_simulation.basic import (PhospheneSimulationConfig,
 from phossim.recording import RecordingConfig, RecordingTransform
 from phossim.agent.stable_baselines import (get_agent, TrainingConfig,
                                             AgentConfig)
-from phossim.rendering import (DisplayConfig, ScreenDisplay, DisplayList,
-                               Display)
+from phossim.rendering import Viewer, ViewerList, ViewerConfig
 
 
 @dataclass
@@ -25,7 +24,7 @@ class Config:
     environment_config: AtariConfig
     transforms: List[Tuple[Type[Transform], TransformConfig]]
     agent_config: AgentConfig
-    displays: List[Display]
+    displays: List[Viewer]
     device: Optional[str] = 'cpu'
 
 
@@ -35,7 +34,7 @@ class Pipeline(BasePipeline):
         self.environment = get_atari_environment(config.environment_config)
         self.environment = wrap_transforms(self.environment, config.transforms)
         self.agent = get_agent(self.environment, config.agent_config)
-        self.renderer = DisplayList(config.displays)
+        self.renderer = ViewerList(config.displays)
 
 
 def main():
@@ -51,6 +50,8 @@ def main():
     path_model.parent.mkdir(exist_ok=True)
     video_length = 300
     def recording_trigger(episode): return episode % 10000 == 0
+
+    shape = (84, 84, 1)
 
     environment_config = AtariConfig(
         GymConfig('ALE/Breakout-v5',
@@ -82,11 +83,10 @@ def main():
     agent_config = AgentConfig(
         path_model, 'PPO', 'MlpPolicy', {'tensorboard_log': path_tensorboard})
 
-    displays = [
-         ScreenDisplay(DisplayConfig(input_key, input_key, 'gym')),
-         ScreenDisplay(DisplayConfig(filter_key, filter_key, 'canny')),
-         ScreenDisplay(DisplayConfig(phosphene_key, phosphene_key, 'basic')),
-    ]
+    displays = [Viewer(ViewerConfig(shape, input_key, input_key)),
+                Viewer(ViewerConfig(shape, filter_key, filter_key)),
+                Viewer(ViewerConfig(shape, phosphene_key, phosphene_key)),
+                ]
 
     config = Config(environment_config,
                     transforms,

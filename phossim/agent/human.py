@@ -7,7 +7,7 @@ import gym
 import numpy as np
 
 if TYPE_CHECKING:
-    from phossim.rendering import Display
+    from phossim.rendering import Viewer
 
 
 @dataclass
@@ -17,17 +17,16 @@ class HumanAgentConfig:
 
 
 class HumanAgent:
-    def __init__(self, environment: gym.Env, display: Display,
+    def __init__(self, environment: gym.Env, viewer: Viewer,
                  config: HumanAgentConfig):
         self.environment = environment
-        self.display = display
+        self.viewer = viewer
         self.action_map = config.action_map
         self.default_action = config.default_action
         assert len(self.action_map) <= self.environment.action_space.n
 
     def predict(self, observation: np.ndarray) -> Tuple[int, None]:
-        key = self.display.render(observation)
-        action = self.default_action
-        if key != -1 and chr(key) in self.action_map:
-            action = self.action_map[chr(key)]
+        self.viewer.render(observation)
+        key = self.viewer.get_key()
+        action = self.action_map.get(key, self.default_action)
         return action, None

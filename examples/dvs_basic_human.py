@@ -14,8 +14,8 @@ from phossim.phosphene_simulation.basic import (PhospheneSimulation,
                                                 PhospheneSimulationConfig)
 from phossim.recording import RecordingConfig, RecordingTransform
 from phossim.agent.human import HumanAgentConfig, HumanAgent
-from phossim.rendering import (DisplayConfig, ScreenDisplay, Display,
-                               DisplayList, VRDisplay, VRDisplayConfig)
+from phossim.rendering import (Viewer, ViewerConfig, ViewerList, VRViewer,
+                               VRViewerConfig)
 
 
 @dataclass
@@ -23,8 +23,8 @@ class Config:
     environment_config: DVSConfig
     transforms: List[Tuple[Type[Transform], TransformConfig]]
     agent_config: HumanAgentConfig
-    displays: List[Display]
-    vr_display: VRDisplay
+    viewers: List[Viewer]
+    vr_viewer: VRViewer
     device: Optional[str] = 'cpu'
 
 
@@ -33,9 +33,9 @@ class Pipeline(BasePipeline):
         super().__init__()
         self.environment = DVSFrameStream(config.environment_config)
         self.environment = wrap_transforms(self.environment, config.transforms)
-        self.agent = HumanAgent(self.environment, config.vr_display,
+        self.agent = HumanAgent(self.environment, config.vr_viewer,
                                 config.agent_config)
-        self.renderer = DisplayList(config.displays)
+        self.renderer = ViewerList(config.viewers)
 
 
 def main():
@@ -70,11 +70,12 @@ def main():
     agent_config = HumanAgentConfig({})
 
     displays = [
-         ScreenDisplay(DisplayConfig(input_key, input_key, 'dvs')),
-         ScreenDisplay(DisplayConfig(phosphene_key, phosphene_key, 'basic')),
+         Viewer(ViewerConfig(shape, input_key, input_key, 'dvs')),
+         Viewer(ViewerConfig(shape, phosphene_key, phosphene_key, 'basic')),
     ]
 
-    vr_display = VRDisplay(VRDisplayConfig('phosphenes_vr', phosphene_key))
+    vr_display = VRViewer(VRViewerConfig((1600, 2880, 1), 'phosphenes_vr',
+                                         phosphene_key))
 
     config = Config(environment_config,
                     transforms,

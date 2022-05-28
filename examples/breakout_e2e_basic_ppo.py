@@ -19,8 +19,7 @@ from phossim.phosphene_simulation.basic import (PhospheneSimulationConfig,
                                                 PhospheneSimulation)
 from phossim.recording import RecordingConfig, RecordingTransform
 from phossim.agent.e2e import TrainingConfig, AgentConfig, E2ePPO
-from phossim.rendering import (DisplayConfig, ScreenDisplay, DisplayList,
-                               Display)
+from phossim.rendering import Viewer, ViewerConfig, ViewerList
 
 
 @dataclass
@@ -28,7 +27,7 @@ class Config:
     environment_config: AtariConfig
     transforms: List[Tuple[Type[Transform], TransformConfig]]
     agent_config: AgentConfig
-    displays: List[Display]
+    viewers: List[Viewer]
     device: Optional[str] = 'cpu'
 
 
@@ -39,7 +38,7 @@ class Pipeline(BasePipeline):
         self.environment = wrap_transforms(self.environment, config.transforms)
         self.agent = E2ePPO(config.agent_config.policy_id, self.environment,
                             **config.agent_config.kwargs)
-        self.renderer = DisplayList(config.displays)
+        self.renderer = ViewerList(config.viewers)
 
 
 class Encoder(nn.Module):
@@ -114,9 +113,9 @@ def main():
         path_model, 'MlpPolicy', {'tensorboard_log': path_tensorboard})
 
     displays = [
-         ScreenDisplay(DisplayConfig(input_key, input_key, 'gym')),
-         ScreenDisplay(DisplayConfig(filter_key, filter_key, 'e2e')),
-         ScreenDisplay(DisplayConfig(phosphene_key, phosphene_key, 'basic')),
+         Viewer(ViewerConfig(shape, input_key, input_key, 'gym')),
+         Viewer(ViewerConfig(shape, filter_key, filter_key, 'e2e')),
+         Viewer(ViewerConfig(shape, phosphene_key, phosphene_key, 'basic')),
     ]
 
     config = Config(environment_config,

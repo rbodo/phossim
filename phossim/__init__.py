@@ -1,1 +1,0 @@
-QUIT_KEY = 'q'
