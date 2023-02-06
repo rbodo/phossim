@@ -12,10 +12,6 @@ class TrainingConfig:
     total_timesteps: int
     log_interval: int = 50
     tb_log_name: str = 'run'
-    eval_env: Optional[gym.Env] = None
-    eval_freq: int = -1
-    n_eval_episodes: int = 5
-    eval_log_path: Optional[str] = None
     reset_num_timesteps: bool = True
 
     def asdict(self):
