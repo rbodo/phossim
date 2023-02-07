@@ -36,7 +36,7 @@ class Neurosmash(gym.Env):
         self._send(action)
         return self._receive()
 
-    def reset(self):
+    def reset(self, **kwargs):
         self._send(0, 1)
         observation, _, _, _ = self._receive()
         return observation

@@ -29,7 +29,7 @@ class AbstractVideoStream(gym.Env):
         self.stream = None
         self.frame = None
 
-    def reset(self):
+    def reset(self, **kwargs):
         self._update_frame()
         return self.frame
 
@@ -59,6 +59,8 @@ class CameraStream(AbstractVideoStream):
         super().__init__()
         a = cv2.CAP_DSHOW if os.name == 'nt' else None  # Only for Windows
         self.stream = cv2.VideoCapture(config.camera_id, a)
+        self.action_space = gym.spaces.Discrete(1)
+        self.observation_space = config.observation_space
 
     def _update_frame(self):
         grabbed, self.frame = self.stream.read()

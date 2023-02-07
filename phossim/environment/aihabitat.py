@@ -2,12 +2,6 @@ from dataclasses import dataclass
 
 import gym
 import habitat
-from habitat.sims.habitat_simulator.actions import HabitatSimActions
-
-FORWARD_KEY = 'w'
-LEFT_KEY = 'a'
-RIGHT_KEY = 'd'
-FINISH = 'f'
 
 
 @dataclass
@@ -31,7 +25,7 @@ class Aihabitat(gym.Env):
         self._state = None
 
     def step(self, action):
-        observations = self.env.step(key2action(action))
+        observations = self.env.step(action)
         observation = observations['rgb']
         reward = get_reward(observations)
         done = self.env.episode_over or reward
@@ -49,25 +43,6 @@ class Aihabitat(gym.Env):
             return self._state
         else:
             super().render(mode)
-
-
-def key2action(key):
-    if key == ord(FORWARD_KEY):
-        action = HabitatSimActions.move_forward
-        print('action: FORWARD')
-    elif key == ord(LEFT_KEY):
-        action = HabitatSimActions.turn_left
-        print('action: LEFT')
-    elif key == ord(RIGHT_KEY):
-        action = HabitatSimActions.turn_right
-        print('action: RIGHT')
-    elif key == ord(FINISH):
-        action = HabitatSimActions.stop
-        print('action: FINISH')
-    else:
-        action = None
-        print('INVALID KEY')
-    return action
 
 
 def get_reward(observations):

@@ -6,5 +6,4 @@ opencv-python
 tensorboard
 torch
 dv
-pyglet
 dynaphos

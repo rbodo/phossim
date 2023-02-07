@@ -6,24 +6,23 @@ from typing import List, Tuple, Type, Optional
 
 import gym
 import numpy as np
-from habitat.sims.habitat_simulator.actions import HabitatSimActions
 
-from phossim.pipeline import BasePipeline
-from phossim.environment.aihabitat import AihabitatConfig, Aihabitat
-from phossim.transforms import Transform, TransformConfig, wrap_transforms
-from phossim.filtering.preprocessing import (GrayscaleTransform, ResizeConfig,
-                                             GrayscaleConfig, ResizeTransform)
 from phossim.filtering.edge import CannyFilter, CannyConfig
-from phossim.phosphene_simulation.realistic import (PhospheneSimulation,
-                                                    PhospheneSimulationConfig)
+from phossim.filtering.preprocessing import ResizeTransform, ResizeConfig, \
+    GrayscaleTransform, GrayscaleConfig
+from phossim.pipeline import BasePipeline
+from phossim.environment.camera import CameraConfig, CameraStream
+from phossim.transforms import Transform, TransformConfig, wrap_transforms
+from phossim.phosphene_simulation.basic import (PhospheneSimulation,
+                                                PhospheneSimulationConfig)
 from phossim.recording import RecordingConfig, RecordingTransform
-from phossim.agent.human import HumanAgent, HumanAgentConfig
+from phossim.agent.human import HumanAgentConfig, HumanAgent
 from phossim.rendering import Viewer, ViewerConfig, ViewerList
 
 
 @dataclass
 class Config:
-    environment_config: AihabitatConfig
+    environment_config: CameraConfig
     transforms: List[Tuple[Type[Transform], TransformConfig]]
     agent_config: HumanAgentConfig
     viewers: List[Viewer]
@@ -33,7 +32,7 @@ class Config:
 class Pipeline(BasePipeline):
     def __init__(self, config: Config):
         super().__init__()
-        self.environment = Aihabitat(config.environment_config)
+        self.environment = CameraStream(config.environment_config)
         self.environment = wrap_transforms(self.environment, config.transforms)
         self.agent = HumanAgent(self.environment, config.agent_config)
         self.renderer = ViewerList(config.viewers)
@@ -45,13 +44,11 @@ def main():
     input_key = 'input'
     filter_key = 'filtered_observation'
     phosphene_key = 'phosphenes'
-    path_base = Path('~/Data/phosphenes/aihabitat_human').expanduser()
-    path_config = 'benchmark/nav/pointnav/pointnav_habitat_test.yaml'
+    path_base = Path('~/Data/phosphenes/dvs_human').expanduser()
     path_recording = path_base.joinpath('recording')
     video_length = 300
     def recording_trigger(episode): return episode % 10000 == 0
 
-    num_phosphenes = 256
     size_in = 128
     size_out = 512
     shape_in = (size_in, size_in, 3)
@@ -64,11 +61,8 @@ def main():
                                                dtype=np.uint8)
     observation_space_gray = gym.spaces.Box(low=0, high=255, shape=shape_gray,
                                             dtype=np.uint8)
-    observation_space_phosphenes = gym.spaces.Box(low=0, high=255,
-                                                  shape=shape_gray,
-                                                  dtype=np.uint8)
 
-    environment_config = AihabitatConfig(observation_space_in, path_config)
+    environment_config = CameraConfig(observation_space_in)
 
     transforms = [
         (Transform, TransformConfig(input_key)),
@@ -83,24 +77,19 @@ def main():
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='filtered')),
-        (PhospheneSimulation,
-         PhospheneSimulationConfig(phosphene_key, observation_space_phosphenes,
-                                   num_phosphenes)),
+        (PhospheneSimulation, PhospheneSimulationConfig(phosphene_key)),
         (RecordingTransform, RecordingConfig(path_recording,
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='phosphenes')),
     ]
 
-    action_map = {ord('w'): HabitatSimActions.move_forward,
-                  ord('a'): HabitatSimActions.turn_left,
-                  ord('d'): HabitatSimActions.turn_right}
-    agent_config = HumanAgentConfig(action_map, (1600, 2880, 1))
+    agent_config = HumanAgentConfig({}, (1600, 2880, 1))
 
     displays = [
-        Viewer(ViewerConfig(input_key, 'aihabitat')),
-        Viewer(ViewerConfig(filter_key, 'canny')),
-        Viewer(ViewerConfig(phosphene_key, 'basic')),
+         Viewer(ViewerConfig(input_key, 'hallway')),
+         Viewer(ViewerConfig(filter_key, 'canny')),
+         Viewer(ViewerConfig(phosphene_key, 'basic')),
     ]
 
     config = Config(environment_config,

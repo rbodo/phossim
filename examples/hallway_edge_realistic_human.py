@@ -6,7 +6,6 @@ from typing import List, Tuple, Type, Optional
 
 import gym
 import numpy as np
-from pyglet.window import key
 
 from phossim.pipeline import BasePipeline
 from phossim.environment.hallway import HallwayConfig, Hallway
@@ -18,8 +17,7 @@ from phossim.phosphene_simulation.realistic import (PhospheneSimulation,
                                                     PhospheneSimulationConfig)
 from phossim.recording import RecordingConfig, RecordingTransform
 from phossim.agent.human import HumanAgent, HumanAgentConfig
-from phossim.rendering import (Viewer, ViewerConfig, ViewerList, VRViewer,
-                               VRViewerConfig)
+from phossim.rendering import Viewer, ViewerConfig, ViewerList
 
 
 @dataclass
@@ -28,7 +26,6 @@ class Config:
     transforms: List[Tuple[Type[Transform], TransformConfig]]
     agent_config: HumanAgentConfig
     viewers: List[Viewer]
-    vr_viewer: VRViewer
     device: Optional[str] = 'cpu'
 
 
@@ -37,8 +34,7 @@ class Pipeline(BasePipeline):
         super().__init__()
         self.environment = Hallway(config.environment_config)
         self.environment = wrap_transforms(self.environment, config.transforms)
-        self.agent = HumanAgent(self.environment, config.vr_viewer,
-                                config.agent_config)
+        self.agent = HumanAgent(self.environment, config.agent_config)
         self.renderer = ViewerList(config.viewers)
 
 
@@ -94,23 +90,19 @@ def main():
                                              name_prefix='phosphenes')),
     ]
 
-    agent_config = HumanAgentConfig({key.W: 0, key.A: 1, key.D: 2})
+    action_map = {ord('w'): 0, ord('a'): 1, ord('d'): 0}
+    agent_config = HumanAgentConfig(action_map, (1600, 2880, 1))
 
     displays = [
-         Viewer(ViewerConfig(shape_in, input_key, input_key, 'hallway')),
-         Viewer(ViewerConfig(shape_gray, filter_key, filter_key, 'canny')),
-         Viewer(ViewerConfig(shape_gray, phosphene_key, phosphene_key,
-                             'basic')),
+         Viewer(ViewerConfig(input_key, 'hallway')),
+         Viewer(ViewerConfig(filter_key, 'canny')),
+         Viewer(ViewerConfig(phosphene_key, 'basic')),
     ]
-
-    vr_display = VRViewer(VRViewerConfig((1600, 2880, 1), 'phosphenes_vr',
-                                         phosphene_key))
 
     config = Config(environment_config,
                     transforms,
                     agent_config,
                     displays,
-                    vr_display,
                     device)
 
     pipeline = Pipeline(config)

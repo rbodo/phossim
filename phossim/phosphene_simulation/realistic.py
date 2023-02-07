@@ -2,6 +2,7 @@ import numpy as np
 from dataclasses import dataclass
 
 import gym
+import os
 import torch
 from dynaphos.cortex_models import \
     get_visual_field_coordinates_from_cortex_full
@@ -9,6 +10,7 @@ from dynaphos.simulator import GaussianSimulator
 from dynaphos.utils import (load_params, to_numpy, load_coordinates_from_yaml,
                             Map)
 
+from phossim import phosphene_simulation
 from phossim.transforms import Transform, TransformConfig
 
 
@@ -27,12 +29,13 @@ class PhospheneSimulation(Transform):
 
         self._observation_space = config.observation_space
         resolution = self._observation_space.shape[:-1]
-        params = load_params('../phossim/phosphene_simulation/params.yaml')
+        path_module = os.path.dirname(phosphene_simulation.__file__)
+        params = load_params(os.path.join(path_module, 'params.yaml'))
         params['thresholding']['use_threshold'] = False
         params['run']['resolution'] = resolution
         params['display']['screen_resolution'] = resolution
         coordinates_cortex = load_coordinates_from_yaml(
-            '../phossim/phosphene_simulation/grid_coords_dipole_valid.yaml',
+            os.path.join(path_module, 'grid_coords_dipole_valid.yaml'),
             n_coordinates=config.num_phosphenes)
         coordinates_cortex = Map(*coordinates_cortex)
         coordinates_visual_field = \
@@ -46,5 +49,6 @@ class PhospheneSimulation(Transform):
         """
 
         stimulus = self.sim.sample_stimulus(np.moveaxis(observation, -1, 0))
-        phosphenes = self.sim(stimulus) * 255  # Has been clipped to 1 before.
+        phosphenes = self.sim(stimulus)
+        phosphenes *= 255  # Has been clipped to 1 before.
         return np.atleast_3d(to_numpy(phosphenes)).astype('uint8')

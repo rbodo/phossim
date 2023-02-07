@@ -30,26 +30,27 @@ class BasePipeline:
 
             observation, reward, done, info = self.environment.step(action)
 
-            self.renderer.render(info)
+            key = self.renderer.render(info)
 
-            if self._is_pipeline_done():
+            if self._is_pipeline_done(key):
                 self.close()
-                return
+                return key
 
     def run(self):
 
         for i_episode in count():
 
-            self.run_episode()
+            key = self.run_episode()
 
-            if self._is_run_done(i_episode):
+            if self._is_run_done(key, i_episode):
                 return
 
-    def _is_run_done(self, i_episode: int) -> bool:
-        return self._is_pipeline_done() or i_episode > self.max_num_episodes
+    def _is_run_done(self, key: str, i_episode: int) -> bool:
+        return self._is_pipeline_done(key) or i_episode > self.max_num_episodes
 
-    def _is_pipeline_done(self) -> bool:
-        return self.renderer.has_exit
+    @staticmethod
+    def _is_pipeline_done(key: str) -> bool:
+        return key == 'q'
 
     def close(self):
         self.environment.close()
