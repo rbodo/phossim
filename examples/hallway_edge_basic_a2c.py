@@ -9,14 +9,13 @@ import numpy as np
 
 from phossim.pipeline import BasePipeline
 from phossim.environment.hallway import HallwayConfig, Hallway
-from phossim.transforms import (Transform, TransformConfig, TimeLimitConfig,
-                                MonitorConfig, MonitorTransform,
-                                TimeLimitTransform, wrap_transforms)
-from phossim.filtering.preprocessing import GrayscaleTransform, GrayscaleConfig
-from phossim.filtering.edge import CannyFilter, CannyConfig
-from phossim.phosphene_simulation.basic import (PhospheneSimulation,
-                                                PhospheneSimulationConfig)
-from phossim.recording import RecordingConfig, RecordingTransform
+from phossim.transforms.common import (
+    Transform, TransformConfig, wrap_transforms, RecordingConfig,
+    RecordingTransform, GrayscaleTransform, GrayscaleConfig,
+    TimeLimitTransform, TimeLimitConfig, MonitorTransform, MonitorConfig)
+from phossim.transforms.edge import CannyFilter, CannyConfig
+from phossim.transforms.phosphenes.basic import (PhospheneSimulation,
+                                                 PhospheneSimulationConfig)
 from phossim.agent.stable_baselines import (get_agent, TrainingConfig,
                                             AgentConfig)
 from phossim.rendering import Viewer, ViewerConfig, ViewerList
@@ -89,10 +88,9 @@ def main():
         path_model, 'A2C', 'CnnPolicy', {'tensorboard_log': path_tensorboard})
 
     displays = [
-         Viewer(ViewerConfig(shape, input_key, input_key, 'hallway')),
-         Viewer(ViewerConfig(shape_gray, filter_key, filter_key, 'canny')),
-         Viewer(ViewerConfig(shape_gray, phosphene_key, phosphene_key,
-                             'basic')),
+         Viewer(ViewerConfig(input_key, 'hallway')),
+         Viewer(ViewerConfig(filter_key, 'canny')),
+         Viewer(ViewerConfig(phosphene_key, 'basic')),
     ]
 
     config = Config(environment_config,

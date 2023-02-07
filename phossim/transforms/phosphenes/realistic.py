@@ -3,6 +3,8 @@ from dataclasses import dataclass
 
 import gym
 import os
+
+import pathlib
 import torch
 from dynaphos.cortex_models import \
     get_visual_field_coordinates_from_cortex_full
@@ -10,8 +12,7 @@ from dynaphos.simulator import GaussianSimulator
 from dynaphos.utils import (load_params, to_numpy, load_coordinates_from_yaml,
                             Map)
 
-from phossim import phosphene_simulation
-from phossim.transforms import Transform, TransformConfig
+from phossim.transforms.common import Transform, TransformConfig
 
 
 @dataclass
@@ -29,7 +30,7 @@ class PhospheneSimulation(Transform):
 
         self._observation_space = config.observation_space
         resolution = self._observation_space.shape[:-1]
-        path_module = os.path.dirname(phosphene_simulation.__file__)
+        path_module = pathlib.Path(__file__).parent.resolve()
         params = load_params(os.path.join(path_module, 'params.yaml'))
         params['thresholding']['use_threshold'] = False
         params['run']['resolution'] = resolution

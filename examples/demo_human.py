@@ -7,15 +7,14 @@ from typing import List, Tuple, Type, Optional
 import gym
 import numpy as np
 
-from phossim.filtering.edge import CannyFilter, CannyConfig
-from phossim.filtering.preprocessing import ResizeTransform, ResizeConfig, \
-    GrayscaleTransform, GrayscaleConfig
 from phossim.pipeline import BasePipeline
 from phossim.environment.camera import CameraConfig, CameraStream
-from phossim.transforms import Transform, TransformConfig, wrap_transforms
-from phossim.phosphene_simulation.basic import (PhospheneSimulation,
-                                                PhospheneSimulationConfig)
-from phossim.recording import RecordingConfig, RecordingTransform
+from phossim.transforms.common import (
+    Transform, TransformConfig, wrap_transforms, ResizeConfig, RecordingConfig,
+    RecordingTransform, GrayscaleTransform, GrayscaleConfig, ResizeTransform)
+from phossim.transforms.edge import CannyFilter, CannyConfig
+from phossim.transforms.phosphenes.basic import (PhospheneSimulation,
+                                                 PhospheneSimulationConfig)
 from phossim.agent.human import HumanAgentConfig, HumanAgent
 from phossim.rendering import Viewer, ViewerConfig, ViewerList
 

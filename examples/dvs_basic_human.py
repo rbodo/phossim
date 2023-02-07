@@ -9,13 +9,13 @@ import numpy as np
 
 from phossim.pipeline import BasePipeline
 from phossim.environment.camera import DVSConfig, DVSFrameStream
-from phossim.transforms import Transform, TransformConfig, wrap_transforms
-from phossim.phosphene_simulation.basic import (PhospheneSimulation,
-                                                PhospheneSimulationConfig)
-from phossim.recording import RecordingConfig, RecordingTransform
+from phossim.transforms.common import (
+    Transform, TransformConfig, wrap_transforms, RecordingConfig,
+    RecordingTransform)
+from phossim.transforms.phosphenes.basic import (PhospheneSimulation,
+                                                 PhospheneSimulationConfig)
 from phossim.agent.human import HumanAgentConfig, HumanAgent
-from phossim.rendering import (Viewer, ViewerConfig, ViewerList, VRViewer,
-                               VRViewerConfig)
+from phossim.rendering import Viewer, ViewerConfig, ViewerList
 
 
 @dataclass
@@ -24,7 +24,6 @@ class Config:
     transforms: List[Tuple[Type[Transform], TransformConfig]]
     agent_config: HumanAgentConfig
     viewers: List[Viewer]
-    vr_viewer: VRViewer
     device: Optional[str] = 'cpu'
 
 
@@ -33,8 +32,7 @@ class Pipeline(BasePipeline):
         super().__init__()
         self.environment = DVSFrameStream(config.environment_config)
         self.environment = wrap_transforms(self.environment, config.transforms)
-        self.agent = HumanAgent(self.environment, config.vr_viewer,
-                                config.agent_config)
+        self.agent = HumanAgent(self.environment, config.agent_config)
         self.renderer = ViewerList(config.viewers)
 
 
@@ -67,21 +65,17 @@ def main():
                                              name_prefix='phosphenes')),
     ]
 
-    agent_config = HumanAgentConfig({})
+    agent_config = HumanAgentConfig({}, (1600, 2880, 1))
 
     displays = [
-         Viewer(ViewerConfig(shape, input_key, input_key, 'dvs')),
-         Viewer(ViewerConfig(shape, phosphene_key, phosphene_key, 'basic')),
+         Viewer(ViewerConfig(input_key, 'dvs')),
+         Viewer(ViewerConfig(phosphene_key, 'basic')),
     ]
-
-    vr_display = VRViewer(VRViewerConfig((1600, 2880, 1), 'phosphenes_vr',
-                                         phosphene_key))
 
     config = Config(environment_config,
                     transforms,
                     agent_config,
                     displays,
-                    vr_display,
                     device)
 
     pipeline = Pipeline(config)

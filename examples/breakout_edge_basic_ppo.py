@@ -7,13 +7,13 @@ from typing import List, Tuple, Type, Optional
 from phossim.pipeline import BasePipeline
 from phossim.environment.openai_gym import (GymConfig, AtariConfig,
                                             get_atari_environment)
-from phossim.transforms import (Transform, TransformConfig, wrap_transforms,
-                                TimeLimitConfig, MonitorConfig,
-                                TimeLimitTransform, MonitorTransform)
-from phossim.filtering.edge import CannyConfig, CannyFilter
-from phossim.phosphene_simulation.basic import (PhospheneSimulationConfig,
-                                                PhospheneSimulation)
-from phossim.recording import RecordingConfig, RecordingTransform
+from phossim.transforms.common import (
+    Transform, TransformConfig, wrap_transforms, RecordingConfig,
+    RecordingTransform, TimeLimitTransform, TimeLimitConfig, MonitorTransform,
+    MonitorConfig)
+from phossim.transforms.edge import CannyFilter, CannyConfig
+from phossim.transforms.phosphenes.basic import (PhospheneSimulation,
+                                                 PhospheneSimulationConfig)
 from phossim.agent.stable_baselines import (get_agent, TrainingConfig,
                                             AgentConfig)
 from phossim.rendering import Viewer, ViewerList, ViewerConfig
@@ -51,8 +51,6 @@ def main():
     video_length = 300
     def recording_trigger(episode): return episode % 10000 == 0
 
-    shape = (84, 84, 1)
-
     environment_config = AtariConfig(
         GymConfig('ALE/Breakout-v5',
                   {'render_mode': 'rgb_array',
@@ -83,10 +81,11 @@ def main():
     agent_config = AgentConfig(
         path_model, 'PPO', 'MlpPolicy', {'tensorboard_log': path_tensorboard})
 
-    displays = [Viewer(ViewerConfig(shape, input_key, input_key)),
-                Viewer(ViewerConfig(shape, filter_key, filter_key)),
-                Viewer(ViewerConfig(shape, phosphene_key, phosphene_key)),
-                ]
+    displays = [
+        Viewer(ViewerConfig(input_key, 'input')),
+        Viewer(ViewerConfig(filter_key, 'canny')),
+        Viewer(ViewerConfig(phosphene_key, 'phosphenes')),
+    ]
 
     config = Config(environment_config,
                     transforms,

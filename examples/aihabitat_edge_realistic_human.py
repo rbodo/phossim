@@ -10,13 +10,12 @@ from habitat.sims.habitat_simulator.actions import HabitatSimActions
 
 from phossim.pipeline import BasePipeline
 from phossim.environment.aihabitat import AihabitatConfig, Aihabitat
-from phossim.transforms import Transform, TransformConfig, wrap_transforms
-from phossim.filtering.preprocessing import (GrayscaleTransform, ResizeConfig,
-                                             GrayscaleConfig, ResizeTransform)
-from phossim.filtering.edge import CannyFilter, CannyConfig
-from phossim.phosphene_simulation.realistic import (PhospheneSimulation,
-                                                    PhospheneSimulationConfig)
-from phossim.recording import RecordingConfig, RecordingTransform
+from phossim.transforms.common import (
+    Transform, TransformConfig, wrap_transforms, ResizeConfig, RecordingConfig,
+    RecordingTransform, GrayscaleTransform, GrayscaleConfig, ResizeTransform)
+from phossim.transforms.edge import CannyFilter, CannyConfig
+from phossim.transforms.phosphenes.realistic import (PhospheneSimulation,
+                                                     PhospheneSimulationConfig)
 from phossim.agent.human import HumanAgent, HumanAgentConfig
 from phossim.rendering import Viewer, ViewerConfig, ViewerList
 

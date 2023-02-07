@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 import gym
 
-from phossim.transforms import Transform, TransformConfig
+from phossim.transforms.common import Transform, TransformConfig
 
 
 @dataclass

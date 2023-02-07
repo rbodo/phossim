@@ -6,10 +6,10 @@ from typing import List, Tuple, Type, Optional
 
 from phossim.environment.neurosmash import Neurosmash, NeurosmashConfig
 from phossim.pipeline import BasePipeline
-from phossim.transforms import (Transform, TransformConfig, TimeLimitConfig,
-                                MonitorConfig, MonitorTransform,
-                                TimeLimitTransform, wrap_transforms)
-from phossim.recording import RecordingConfig, RecordingTransform
+from phossim.transforms.common import (
+    Transform, TransformConfig, TimeLimitConfig, MonitorConfig,
+    MonitorTransform, TimeLimitTransform, wrap_transforms, RecordingConfig,
+    RecordingTransform)
 from phossim.agent.stable_baselines import (get_agent, TrainingConfig,
                                             AgentConfig)
 from phossim.rendering import Viewer, ViewerConfig, ViewerList
@@ -61,8 +61,7 @@ def main():
         path_model, 'A2C', 'CnnPolicy', {'tensorboard_log': path_tensorboard})
 
     displays = [
-         Viewer(ViewerConfig((128, 128, 1), input_key, input_key,
-                             'neurosmash')),
+         Viewer(ViewerConfig(input_key, 'neurosmash')),
     ]
 
     config = Config(environment_config,

@@ -1,8 +1,10 @@
 from dataclasses import dataclass, asdict
-from typing import Union, List, Tuple, Type
+from pathlib import Path
+from typing import Union, List, Tuple, Type, Optional, Callable
 
 import cv2
 import gym
+import numpy as np
 from stable_baselines3.common.monitor import Monitor
 
 
@@ -67,3 +69,49 @@ class TimeLimitTransform(gym.wrappers.TimeLimit):
 class MonitorTransform(Monitor):
     def __init__(self, env, config: MonitorConfig):
         super().__init__(env, **asdict(config))
+
+
+@dataclass
+class RecordingConfig:
+    video_folder: Path
+    episode_trigger: Optional[Callable[[int], bool]] = None
+    step_trigger: Optional[Callable[[int], bool]] = None
+    video_length: int = 0
+    name_prefix: str = None
+
+
+class RecordingTransform(gym.wrappers.RecordVideo):
+    def __init__(self, env: gym.Env, config: RecordingConfig):
+        if 'render_modes' in env.metadata:  # Fixing gym bug
+            env.metadata['render.modes'] = env.metadata['render_modes']
+        super().__init__(env, **asdict(config))
+
+
+@dataclass
+class GrayscaleConfig(TransformConfig):
+    observation_space: gym.Space
+
+
+class GrayscaleTransform(Transform):
+    def __init__(self, env, config: GrayscaleConfig):
+        super().__init__(env, config)
+        self._observation_space = config.observation_space
+
+    def observation(self, observation):
+        return np.atleast_3d(cv2.cvtColor(observation, cv2.COLOR_BGR2GRAY))
+
+
+@dataclass
+class ResizeConfig(TransformConfig):
+    observation_space: gym.Space
+
+
+class ResizeTransform(Transform):
+    def __init__(self, env, config: ResizeConfig):
+        super().__init__(env, config)
+        self._observation_space = config.observation_space
+        self._target_shape = self._observation_space.shape
+
+    def observation(self, observation):
+        return cv2.resize(observation, (self._target_shape[1],
+                                        self._target_shape[0]))

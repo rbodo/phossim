@@ -11,13 +11,13 @@ from torch import nn
 from phossim.pipeline import BasePipeline
 from phossim.environment.openai_gym import (GymConfig, AtariConfig,
                                             get_atari_environment)
-from phossim.transforms import (Transform, TransformConfig, wrap_transforms,
-                                TimeLimitConfig, MonitorConfig,
-                                TimeLimitTransform, MonitorTransform)
-from phossim.filtering.e2e import AutoencoderFilter, AutoencoderConfig
-from phossim.phosphene_simulation.basic import (PhospheneSimulationConfig,
-                                                PhospheneSimulation)
-from phossim.recording import RecordingConfig, RecordingTransform
+from phossim.transforms.common import (
+    Transform, TransformConfig, wrap_transforms, RecordingConfig,
+    RecordingTransform, TimeLimitTransform, TimeLimitConfig, MonitorTransform,
+    MonitorConfig)
+from phossim.transforms.e2e import AutoencoderFilter, AutoencoderConfig
+from phossim.transforms.phosphenes.basic import (PhospheneSimulation,
+                                                 PhospheneSimulationConfig)
 from phossim.agent.e2e import TrainingConfig, AgentConfig, E2ePPO
 from phossim.rendering import Viewer, ViewerConfig, ViewerList
 
@@ -113,9 +113,9 @@ def main():
         path_model, 'MlpPolicy', {'tensorboard_log': path_tensorboard})
 
     displays = [
-         Viewer(ViewerConfig(shape, input_key, input_key, 'gym')),
-         Viewer(ViewerConfig(shape, filter_key, filter_key, 'e2e')),
-         Viewer(ViewerConfig(shape, phosphene_key, phosphene_key, 'basic')),
+         Viewer(ViewerConfig(input_key, 'gym')),
+         Viewer(ViewerConfig(filter_key, 'e2e')),
+         Viewer(ViewerConfig(phosphene_key, 'basic')),
     ]
 
     config = Config(environment_config,

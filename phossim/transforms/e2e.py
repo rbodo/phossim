@@ -4,7 +4,7 @@ import gym
 import torch
 from torch import nn
 
-from phossim.transforms import Transform, TransformConfig
+from phossim.transforms.common import Transform, TransformConfig
 
 
 @dataclass
