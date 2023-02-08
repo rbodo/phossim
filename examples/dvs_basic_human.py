@@ -4,14 +4,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Tuple, Type, Optional
 
-import gym
-import numpy as np
-
 from phossim.pipeline import BasePipeline
 from phossim.environment.camera import DVSConfig, DVSFrameStream
 from phossim.transforms.common import (
     Transform, TransformConfig, wrap_transforms, RecordingConfig,
-    RecordingTransform)
+    RecordingTransform, VrDisplayTransform, VrDisplayConfig)
 from phossim.transforms.phosphenes.basic import (PhospheneSimulation,
                                                  PhospheneSimulationConfig)
 from phossim.agent.human import HumanAgentConfig, HumanAgent
@@ -32,8 +29,8 @@ class Pipeline(BasePipeline):
         super().__init__()
         self.environment = DVSFrameStream(config.environment_config)
         self.environment = wrap_transforms(self.environment, config.transforms)
-        self.agent = HumanAgent(self.environment, config.agent_config)
         self.renderer = ViewerList(config.viewers)
+        self.agent = HumanAgent(self.renderer, config.agent_config)
 
 
 def main():
@@ -41,16 +38,16 @@ def main():
     device = 'cuda:0'
     input_key = 'input'
     phosphene_key = 'phosphenes'
+    vr_key = 'vr_display'
     path_base = Path('~/Data/phosphenes/dvs_human').expanduser()
     path_recording = path_base.joinpath('recording')
     video_length = 300
     def recording_trigger(episode): return episode % 10000 == 0
 
     shape = (260, 346, 1)
-    observation_space_in = gym.spaces.Box(low=0, high=255, shape=shape,
-                                          dtype=np.uint8)
+    shape_vr = (1600, 2880, 1)
 
-    environment_config = DVSConfig(observation_space_in, port=6666)
+    environment_config = DVSConfig(shape, port=6666)
 
     transforms = [
         (Transform, TransformConfig(input_key)),
@@ -63,13 +60,15 @@ def main():
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='phosphenes')),
+        (VrDisplayTransform, VrDisplayConfig(vr_key, shape_vr))
     ]
 
-    agent_config = HumanAgentConfig({}, (1600, 2880, 1))
+    agent_config = HumanAgentConfig({})
 
     displays = [
-         Viewer(ViewerConfig(input_key, 'dvs')),
-         Viewer(ViewerConfig(phosphene_key, 'basic')),
+        Viewer(ViewerConfig(input_key, 'dvs')),
+        Viewer(ViewerConfig(phosphene_key, 'basic')),
+        Viewer(ViewerConfig(vr_key, 'vr_display'))
     ]
 
     config = Config(environment_config,

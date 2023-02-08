@@ -2,15 +2,17 @@ import os
 
 import struct
 from dataclasses import dataclass
+from typing import Tuple
 
 import cv2
 import gym
+import numpy as np
 from dv import NetworkFrameInput
 
 
 @dataclass
 class CameraConfig:
-    observation_space: gym.Space
+    shape: Tuple[int, int, int]
     camera_id: int = 0
 
 
@@ -60,7 +62,8 @@ class CameraStream(AbstractVideoStream):
         a = cv2.CAP_DSHOW if os.name == 'nt' else None  # Only for Windows
         self.stream = cv2.VideoCapture(config.camera_id, a)
         self.action_space = gym.spaces.Discrete(1)
-        self.observation_space = config.observation_space
+        self.observation_space = gym.spaces.Box(
+            low=0, high=255, shape=config.shape, dtype=np.uint8)
 
     def _update_frame(self):
         grabbed, self.frame = self.stream.read()
@@ -80,7 +83,8 @@ class DVSFrameStream(AbstractVideoStream):
         super().__init__()
         self.stream = NetworkFrameInput(config.ip, config.port)
         self.action_space = gym.spaces.Discrete(1)
-        self.observation_space = config.observation_space
+        self.observation_space = gym.spaces.Box(
+            low=0, high=255, shape=config.shape, dtype=np.uint8)
 
     def _update_frame(self):
         try:

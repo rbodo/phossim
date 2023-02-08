@@ -1,12 +1,14 @@
 from dataclasses import dataclass
+from typing import Tuple
 
 import gym
 import habitat
+import numpy as np
 
 
 @dataclass
 class AihabitatConfig:
-    observation_space: gym.Space
+    shape: Tuple[int, int, int]
     path_config: str
 
 
@@ -21,7 +23,8 @@ class Aihabitat(gym.Env):
         self._num_channels = 16
         self._num_actions = 4
         self.action_space = gym.spaces.Discrete(self._num_actions)
-        self.observation_space = config.observation_space
+        self.observation_space = gym.spaces.Box(
+            low=0, high=255, shape=config.shape, dtype=np.uint8)
         self._state = None
 
     def step(self, action):

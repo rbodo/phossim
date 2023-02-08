@@ -4,9 +4,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Tuple, Type, Optional
 
-import gym
-import numpy as np
-
 from phossim.pipeline import BasePipeline
 from phossim.environment.hallway import HallwayConfig, Hallway
 from phossim.transforms.common import (
@@ -56,12 +53,8 @@ def main():
     size = 128
     shape = (size, size, 3)
     shape_gray = (size, size, 1)
-    observation_space = gym.spaces.Box(low=0, high=255,
-                                       shape=shape, dtype=np.uint8)
-    observation_space_gray = gym.spaces.Box(low=0, high=255,
-                                            shape=shape_gray, dtype=np.uint8)
 
-    environment_config = HallwayConfig(observation_space, size=size)
+    environment_config = HallwayConfig(shape)
 
     transforms = [
         (Transform, TransformConfig(input_key)),
@@ -69,7 +62,7 @@ def main():
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='input')),
-        (GrayscaleTransform, GrayscaleConfig(None, observation_space_gray)),
+        (GrayscaleTransform, GrayscaleConfig(None, shape_gray)),
         (CannyFilter, CannyConfig(filter_key, sigma=1)),
         (RecordingTransform, RecordingConfig(path_recording,
                                              episode_trigger=recording_trigger,

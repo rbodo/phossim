@@ -89,13 +89,14 @@ class RecordingTransform(gym.wrappers.RecordVideo):
 
 @dataclass
 class GrayscaleConfig(TransformConfig):
-    observation_space: gym.Space
+    shape: Tuple[int, int, int]
 
 
 class GrayscaleTransform(Transform):
     def __init__(self, env, config: GrayscaleConfig):
         super().__init__(env, config)
-        self._observation_space = config.observation_space
+        self._observation_space = gym.spaces.Box(
+            low=0, high=255, shape=config.shape, dtype=np.uint8)
 
     def observation(self, observation):
         return np.atleast_3d(cv2.cvtColor(observation, cv2.COLOR_BGR2GRAY))
@@ -103,15 +104,46 @@ class GrayscaleTransform(Transform):
 
 @dataclass
 class ResizeConfig(TransformConfig):
-    observation_space: gym.Space
+    shape: Tuple[int, int, int]
 
 
 class ResizeTransform(Transform):
     def __init__(self, env, config: ResizeConfig):
         super().__init__(env, config)
-        self._observation_space = config.observation_space
+        self._observation_space = gym.spaces.Box(
+            low=0, high=255, shape=config.shape, dtype=np.uint8)
         self._target_shape = self._observation_space.shape
 
     def observation(self, observation):
         return cv2.resize(observation, (self._target_shape[1],
                                         self._target_shape[0]))
+
+
+@dataclass
+class VrDisplayConfig(TransformConfig):
+    shape: Tuple[int, int, int]
+    idp: int = 1240
+
+
+class VrDisplayTransform(Transform):
+    def __init__(self, env: gym.Env, config: VrDisplayConfig):
+        super().__init__(env, config)
+        self._observation_space = gym.spaces.Box(
+            low=0, high=255, shape=config.shape, dtype=np.uint8)
+        d = config.idp // 2
+        height_in, width_in, _ = env.observation_space.shape
+        height_out, width_out, _ = self.observation_space.shape
+        y = (height_out - height_in) // 2
+        x = (width_out - width_in) // 2
+        self.yrange = range(y, y + height_in)
+        self.xrange_left = range(x - d, x - d + width_in)
+        self.xrange_right = range(x + d, x + d + width_in)
+        self.display = self.observation_space.sample() * 0
+
+    def observation(self, observation):
+        # Center on left eye.
+        self.display[np.ix_(self.yrange, self.xrange_left)] = observation
+        # Center on right eye.
+        self.display[np.ix_(self.yrange, self.xrange_right)] = observation
+
+        return self.display

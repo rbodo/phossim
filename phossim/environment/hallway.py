@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Tuple
 
 import numpy as np
 import socket
@@ -7,10 +8,9 @@ import gym
 
 @dataclass
 class HallwayConfig:
-    observation_space: gym.Space
+    shape: Tuple[int, int, int]
     ip: str = '127.0.0.1'
     port: int = 13000
-    size: int = 128
 
 
 class Hallway(gym.Env):
@@ -19,11 +19,12 @@ class Hallway(gym.Env):
     def __init__(self, config: HallwayConfig):
 
         super().__init__()
-        self._size = config.size
+        self._size = config.shape[0]  # Assumes quadratic resolution
         self._num_channels = 16
         self._num_actions = 3
         self.action_space = gym.spaces.Discrete(self._num_actions)
-        self.observation_space = config.observation_space
+        self.observation_space = gym.spaces.Box(
+            low=0, high=255, shape=config.shape, dtype=np.uint8)
         self._client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._client.connect((config.ip, config.port))
         self._state_dict = None

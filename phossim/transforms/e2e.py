@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Tuple
 
 import gym
 import torch
@@ -9,7 +10,7 @@ from phossim.transforms.common import Transform, TransformConfig
 
 @dataclass
 class AutoencoderConfig(TransformConfig):
-    observation_space: gym.Space
+    shape: Tuple[int, int, int]
     encoder: nn.Module
     decoder: nn.Module
     dtype: torch.dtype = torch.float32
@@ -19,7 +20,8 @@ class AutoencoderConfig(TransformConfig):
 class AutoencoderFilter(Transform):
     def __init__(self, env: gym.Env, config: AutoencoderConfig):
         super().__init__(env, config)
-        self._observation_space = config.observation_space
+        self._observation_space = gym.spaces.Box(
+            low=0, high=1, shape=config.shape, dtype=float)
         self.dtype = config.dtype
         self.device = config.device
         self.encoder = config.encoder

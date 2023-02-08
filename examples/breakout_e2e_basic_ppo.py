@@ -4,8 +4,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Tuple, Type, Optional
 
-import gym
-import numpy as np
 from torch import nn
 
 from phossim.pipeline import BasePipeline
@@ -74,10 +72,6 @@ def main():
     def recording_trigger(episode): return episode % 10000 == 0
 
     shape = (84, 84, 1)
-    observation_space_stimulus = gym.spaces.Box(low=0, high=1, shape=shape,
-                                                dtype=float)
-    observation_space_phosphenes = gym.spaces.Box(low=0, high=255, shape=shape,
-                                                  dtype=np.uint8)
 
     environment_config = AtariConfig(
         GymConfig('ALE/Breakout-v5',
@@ -92,15 +86,13 @@ def main():
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='input')),
-        (AutoencoderFilter, AutoencoderConfig(filter_key,
-                                              observation_space_stimulus,
-                                              Encoder(), Decoder())),
+        (AutoencoderFilter, AutoencoderConfig(filter_key, shape, Encoder(),
+                                              Decoder())),
         (RecordingTransform, RecordingConfig(path_recording,
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='filtered')),
-        (PhospheneSimulation, PhospheneSimulationConfig(
-            phosphene_key, observation_space=observation_space_phosphenes)),
+        (PhospheneSimulation, PhospheneSimulationConfig(phosphene_key, shape)),
         (RecordingTransform, RecordingConfig(path_recording,
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,

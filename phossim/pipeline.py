@@ -19,6 +19,17 @@ class BasePipeline:
     def __init__(self, *args, **kwargs):
         self.max_num_episodes = kwargs.get('max_num_episodes', float('inf'))
 
+    def run(self):
+
+        self.renderer.start()
+
+        for i_episode in count():
+
+            key = self.run_episode()
+
+            if self._is_run_done(key, i_episode):
+                return
+
     def run_episode(self):
 
         observation = self.environment.reset()
@@ -36,15 +47,6 @@ class BasePipeline:
                 self.close()
                 return key
 
-    def run(self):
-
-        for i_episode in count():
-
-            key = self.run_episode()
-
-            if self._is_run_done(key, i_episode):
-                return
-
     def _is_run_done(self, key: str, i_episode: int) -> bool:
         return self._is_pipeline_done(key) or i_episode > self.max_num_episodes
 
@@ -55,3 +57,5 @@ class BasePipeline:
     def close(self):
         self.environment.close()
         self.renderer.stop()
+        if hasattr(self.agent, 'stop_event'):
+            self.agent.stop_event.set()

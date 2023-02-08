@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 from dataclasses import dataclass
 
@@ -17,7 +19,7 @@ from phossim.transforms.common import Transform, TransformConfig
 
 @dataclass
 class PhospheneSimulationConfig(TransformConfig):
-    observation_space: gym.Space
+    shape: Tuple[int, int, int]
     num_phosphenes: int
     intensity_decay: float = 0.4
     dtype: torch.dtype = torch.float32
@@ -28,7 +30,8 @@ class PhospheneSimulation(Transform):
     def __init__(self, env: gym.Env, config: PhospheneSimulationConfig):
         super().__init__(env, config)
 
-        self._observation_space = config.observation_space
+        self._observation_space = gym.spaces.Box(
+            low=0, high=255, shape=config.shape, dtype=np.uint8)
         resolution = self._observation_space.shape[:-1]
         path_module = pathlib.Path(__file__).parent.resolve()
         params = load_params(os.path.join(path_module, 'params.yaml'))

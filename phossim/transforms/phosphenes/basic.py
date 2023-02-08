@@ -10,6 +10,7 @@ from phossim.transforms.common import Transform, TransformConfig
 
 @dataclass
 class PhospheneSimulationConfig(TransformConfig):
+    shape: Optional[Tuple] = None
     phosphene_resolution: Tuple[int, int] = (32, 32)
     phosphene_intensity: float = 8
     normalize_phosphenes: bool = True
@@ -18,7 +19,6 @@ class PhospheneSimulationConfig(TransformConfig):
     intensity_var: float = 0.8
     aperture: float = 0.66
     info_key = 'phosphenes'
-    observation_space: Optional[gym.Space] = None
 
 
 class PhospheneSimulation(Transform):
@@ -29,8 +29,9 @@ class PhospheneSimulation(Transform):
         """
 
         super().__init__(env, config)
-        if config.observation_space is not None:
-            self.observation_space = config.observation_space
+        if config.shape is not None:
+            self.observation_space = gym.spaces.Box(
+                low=0, high=255, shape=config.shape, dtype=np.uint8)
         size = env.observation_space.shape[:-1]
         phosphene_resolution = config.phosphene_resolution
         self.intensity = config.phosphene_intensity

@@ -4,14 +4,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Tuple, Type, Optional
 
-import gym
-import numpy as np
-
 from phossim.pipeline import BasePipeline
 from phossim.environment.camera import CameraConfig, CameraStream
 from phossim.transforms.common import (
     Transform, TransformConfig, wrap_transforms, ResizeConfig, RecordingConfig,
-    RecordingTransform, GrayscaleTransform, GrayscaleConfig, ResizeTransform)
+    RecordingTransform, GrayscaleTransform, GrayscaleConfig, ResizeTransform,
+    VrDisplayConfig, VrDisplayTransform)
 from phossim.transforms.edge import CannyFilter, CannyConfig
 from phossim.transforms.phosphenes.basic import (PhospheneSimulation,
                                                  PhospheneSimulationConfig)
@@ -33,7 +31,7 @@ class Pipeline(BasePipeline):
         super().__init__()
         self.environment = CameraStream(config.environment_config)
         self.environment = wrap_transforms(self.environment, config.transforms)
-        self.agent = HumanAgent(self.environment, config.agent_config)
+        self.agent = HumanAgent(self.renderer, config.agent_config)
         self.renderer = ViewerList(config.viewers)
 
 
@@ -43,34 +41,27 @@ def main():
     input_key = 'input'
     filter_key = 'filtered_observation'
     phosphene_key = 'phosphenes'
+    vr_key = 'vr_display'
     path_base = Path('~/Data/phosphenes/dvs_human').expanduser()
     path_recording = path_base.joinpath('recording')
     video_length = 300
     def recording_trigger(episode): return episode % 10000 == 0
 
-    size_in = 128
-    size_out = 512
-    shape_in = (size_in, size_in, 3)
-    shape_resized = (size_out, size_out, 3)
-    shape_gray = (size_out, size_out, 1)
-    observation_space_in = gym.spaces.Box(low=0, high=255, shape=shape_in,
-                                          dtype=np.uint8)
-    observation_space_resized = gym.spaces.Box(low=0, high=255,
-                                               shape=shape_resized,
-                                               dtype=np.uint8)
-    observation_space_gray = gym.spaces.Box(low=0, high=255, shape=shape_gray,
-                                            dtype=np.uint8)
+    shape_in = (128, 128, 3)
+    shape_resized = (512, 512, 3)
+    shape_gray = (512, 512, 1)
+    shape_vr = (1600, 2880, 1)
 
-    environment_config = CameraConfig(observation_space_in)
+    environment_config = CameraConfig(shape_in)
 
     transforms = [
         (Transform, TransformConfig(input_key)),
-        (ResizeTransform, ResizeConfig(None, observation_space_resized)),
+        (ResizeTransform, ResizeConfig(None, shape_resized)),
         (RecordingTransform, RecordingConfig(path_recording,
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='input')),
-        (GrayscaleTransform, GrayscaleConfig(None, observation_space_gray)),
+        (GrayscaleTransform, GrayscaleConfig(None, shape_gray)),
         (CannyFilter, CannyConfig(filter_key, sigma=1)),
         (RecordingTransform, RecordingConfig(path_recording,
                                              episode_trigger=recording_trigger,
@@ -81,14 +72,16 @@ def main():
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
                                              name_prefix='phosphenes')),
+        (VrDisplayTransform, VrDisplayConfig(vr_key, shape_vr))
     ]
 
-    agent_config = HumanAgentConfig({}, (1600, 2880, 1))
+    agent_config = HumanAgentConfig({})
 
     displays = [
-         Viewer(ViewerConfig(input_key, 'hallway')),
-         Viewer(ViewerConfig(filter_key, 'canny')),
-         Viewer(ViewerConfig(phosphene_key, 'basic')),
+        Viewer(ViewerConfig(input_key, 'hallway')),
+        Viewer(ViewerConfig(filter_key, 'canny')),
+        Viewer(ViewerConfig(phosphene_key, 'basic')),
+        Viewer(ViewerConfig(vr_key, 'vr_display'))
     ]
 
     config = Config(environment_config,
