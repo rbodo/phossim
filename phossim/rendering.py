@@ -1,12 +1,9 @@
 from dataclasses import dataclass
 from threading import Thread, Event
-from typing import List, Optional
+from typing import List
 
 import cv2
 import numpy as np
-
-SETUP_KEYS = {ord('q')}
-ACTION_KEYS = {ord('a'), ord('d')}
 
 
 @dataclass
@@ -37,7 +34,7 @@ class ViewerList:
         while not self.stop_event.is_set():
             key = cv2.waitKey(1)  # in ms.
             if key != -1:   # Only store if user pressed key.
-                self.key = key
+                self.key = chr(key)
             if self.read_event.is_set():
                 self.read_event.clear()
                 for viewer in self.viewers:
@@ -50,13 +47,10 @@ class ViewerList:
         self.read_event.set()
         return self.get_key()
 
-    def get_key(self, kind: Optional[str] = 'setup') -> str:
+    def get_key(self) -> str:
         key = self.key
-        valid = (kind == 'setup' and key in SETUP_KEYS or
-                 kind == 'action' and key in ACTION_KEYS)
-        if valid:
-            self.key = None
-            return key
+        self.key = None
+        return key
 
     def start(self):
         self._thread.start()

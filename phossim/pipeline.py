@@ -28,14 +28,15 @@ class BasePipeline:
             key = self.run_episode()
 
             if self._is_run_done(key, i_episode):
-                return
+                break
+
+        self.close()
 
     def run_episode(self):
 
         observation = self.environment.reset()
 
-        done = False
-        while not done:
+        while True:
 
             action, _ = self.agent.predict(observation)
 
@@ -43,19 +44,19 @@ class BasePipeline:
 
             key = self.renderer.render(info)
 
-            if self._is_pipeline_done(key):
-                self.close()
+            if done or self._is_pipeline_done(key):
                 return key
 
     def _is_run_done(self, key: str, i_episode: int) -> bool:
-        return self._is_pipeline_done(key) or i_episode > self.max_num_episodes
+        return self.is_quit_key(key) or i_episode > self.max_num_episodes
+
+    def _is_pipeline_done(self, key: str) -> bool:
+        return self.is_quit_key(key)
 
     @staticmethod
-    def _is_pipeline_done(key: str) -> bool:
+    def is_quit_key(key: str) -> bool:
         return key == 'q'
 
     def close(self):
         self.environment.close()
         self.renderer.stop()
-        if hasattr(self.agent, 'stop_event'):
-            self.agent.stop_event.set()

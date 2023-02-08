@@ -77,7 +77,7 @@ def main():
         (VrDisplayTransform, VrDisplayConfig(vr_key, shape_vr))
     ]
 
-    action_map = {ord('w'): 0, ord('a'): 1, ord('d'): 2}
+    action_map = {'w': 0, 'a': 1, 'd': 2}
     agent_config = HumanAgentConfig(action_map)
 
     displays = [
