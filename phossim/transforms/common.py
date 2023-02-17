@@ -131,7 +131,7 @@ class VrDisplayTransform(Transform):
         self._observation_space = gym.spaces.Box(
             low=0, high=255, shape=config.shape, dtype=np.uint8)
         d = config.idp // 2
-        height_in, width_in, _ = env.observation_space.shape
+        height_in, width_in = env.observation_space.shape[:2]
         height_out, width_out, _ = self.observation_space.shape
         y = (height_out - height_in) // 2
         x = (width_out - width_in) // 2

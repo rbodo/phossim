@@ -17,6 +17,6 @@ class HumanAgent:
         self.default_action = config.default_action
 
     def predict(self, *args, **kwargs) -> Tuple[int, None]:
-        key = self.renderer.get_key()
+        key = kwargs.get('key', None)
         action = self.action_map.get(key, self.default_action)
         return action, None

@@ -6,7 +6,7 @@ from typing import List, Tuple, Type, Optional
 
 from habitat.sims.habitat_simulator.actions import HabitatSimActions
 
-from phossim.pipeline import BasePipeline
+from phossim.pipeline import InteractivePipeline
 from phossim.environment.aihabitat import AihabitatConfig, Aihabitat
 from phossim.transforms.common import (
     Transform, TransformConfig, wrap_transforms, ResizeConfig, RecordingConfig,
@@ -16,7 +16,7 @@ from phossim.transforms.edge import CannyFilter, CannyConfig
 from phossim.transforms.phosphenes.realistic import (PhospheneSimulation,
                                                      PhospheneSimulationConfig)
 from phossim.agent.human import HumanAgent, HumanAgentConfig
-from phossim.rendering import Viewer, ViewerConfig, ViewerList
+from phossim.rendering import Viewer, ViewerConfig, ViewerListBlocking
 
 
 @dataclass
@@ -28,12 +28,12 @@ class Config:
     device: Optional[str] = 'cpu'
 
 
-class Pipeline(BasePipeline):
+class Pipeline(InteractivePipeline):
     def __init__(self, config: Config):
         super().__init__()
         self.environment = Aihabitat(config.environment_config)
         self.environment = wrap_transforms(self.environment, config.transforms)
-        self.renderer = ViewerList(config.viewers)
+        self.renderer = ViewerListBlocking(config.viewers)
         self.agent = HumanAgent(self.renderer, config.agent_config)
 
 
@@ -72,7 +72,8 @@ def main():
                                              video_length=video_length,
                                              name_prefix='filtered')),
         (PhospheneSimulation,
-         PhospheneSimulationConfig(phosphene_key, shape_gray, num_phosphenes)),
+         PhospheneSimulationConfig(phosphene_key, shape_gray[:-1],
+                                   num_phosphenes)),
         (RecordingTransform, RecordingConfig(path_recording,
                                              episode_trigger=recording_trigger,
                                              video_length=video_length,
@@ -80,10 +81,11 @@ def main():
         (VrDisplayTransform, VrDisplayConfig(vr_key, shape_vr))
     ]
 
-    action_map = {ord('w'): HabitatSimActions.move_forward,
-                  ord('a'): HabitatSimActions.turn_left,
-                  ord('d'): HabitatSimActions.turn_right}
-    agent_config = HumanAgentConfig(action_map)
+    action_map = {'w': HabitatSimActions.move_forward,  # 1
+                  'a': HabitatSimActions.turn_left,  # 2
+                  'd': HabitatSimActions.turn_right}  # 3
+    agent_config = HumanAgentConfig(
+        action_map, default_action=HabitatSimActions.move_forward)
 
     displays = [
         Viewer(ViewerConfig(input_key, 'aihabitat')),

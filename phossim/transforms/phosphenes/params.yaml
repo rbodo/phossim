@@ -7,8 +7,6 @@ run:
   print_stats: False #print simulator values for sanity check
   seed: 42
   dtype: float32
-  use_gaussian_lut: False # Whether to approximate Gaussian activation with a
-                          # look-up table.
   batch_size: 0  # Set to zero when simulator is not used for computational optimization
 
 # display specs to accurately diplay sizes in dva
@@ -42,6 +40,7 @@ cortex_model:
   alpha: 0.95
   dropout_rate: 0.2
   noise_scale: 0.4
+  remove_invalid: True
 
 # habituation and other temporal dynamics
 temporal_dynamics:

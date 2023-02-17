@@ -8,13 +8,13 @@ from stable_baselines3.common.base_class import BaseAlgorithm
 
 if TYPE_CHECKING:
     from phossim.agent.human import HumanAgent
-    from phossim.rendering import ViewerList
+    from phossim.rendering import ViewerList, ViewerListBlocking
 
 
 class BasePipeline:
     environment: gym.Env = None
     agent: Union[BaseAlgorithm, HumanAgent] = None
-    renderer: ViewerList = None
+    renderer: Union[ViewerList, ViewerListBlocking] = None
 
     def __init__(self, *args, **kwargs):
         self.max_num_episodes = kwargs.get('max_num_episodes', float('inf'))
@@ -60,3 +60,24 @@ class BasePipeline:
     def close(self):
         self.environment.close()
         self.renderer.stop()
+
+
+class InteractivePipeline(BasePipeline):
+    def run_episode(self):
+
+        self.environment.reset()
+        observation = None
+        while True:
+
+            action, _ = self.agent.predict(key=observation)
+
+            _, reward, done, info = self.environment.step(action)
+
+            observation = self.renderer.render(info)
+
+            if done or self._is_pipeline_done(observation):
+                if reward:
+                    print("You successfully navigated to destination point.")
+                else:
+                    print("Your navigation was unsuccessful.")
+                return observation

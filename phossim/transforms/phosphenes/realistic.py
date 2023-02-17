@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Optional
 
 import numpy as np
 from dataclasses import dataclass
@@ -19,11 +19,12 @@ from phossim.transforms.common import Transform, TransformConfig
 
 @dataclass
 class PhospheneSimulationConfig(TransformConfig):
-    shape: Tuple[int, int, int]
-    num_phosphenes: int
+    resolution: Tuple[int, int]
+    num_electrodes: int
     intensity_decay: float = 0.4
     dtype: torch.dtype = torch.float32
     device: str = 'cpu'
+    batch_size: Optional[int] = 0  # Use no batch dimension.
 
 
 class PhospheneSimulation(Transform):
@@ -31,16 +32,15 @@ class PhospheneSimulation(Transform):
         super().__init__(env, config)
 
         self._observation_space = gym.spaces.Box(
-            low=0, high=255, shape=config.shape, dtype=np.uint8)
-        resolution = self._observation_space.shape[:-1]
+            low=0, high=255, shape=config.resolution, dtype=np.uint8)
         path_module = pathlib.Path(__file__).parent.resolve()
         params = load_params(os.path.join(path_module, 'params.yaml'))
         params['thresholding']['use_threshold'] = False
-        params['run']['resolution'] = resolution
-        params['display']['screen_resolution'] = resolution
+        params['run']['resolution'] = config.resolution
+        params['display']['screen_resolution'] = config.resolution
         coordinates_cortex = load_coordinates_from_yaml(
             os.path.join(path_module, 'grid_coords_dipole_valid.yaml'),
-            n_coordinates=config.num_phosphenes)
+            n_coordinates=config.num_electrodes)
         coordinates_cortex = Map(*coordinates_cortex)
         coordinates_visual_field = \
             get_visual_field_coordinates_from_cortex_full(
@@ -56,3 +56,41 @@ class PhospheneSimulation(Transform):
         phosphenes = self.sim(stimulus)
         phosphenes *= 255  # Has been clipped to 1 before.
         return np.atleast_3d(to_numpy(phosphenes)).astype('uint8')
+
+
+class PhospheneSimulationTorch(torch.nn.Module):
+    def __init__(self, config: PhospheneSimulationConfig):
+        super().__init__()
+
+        path_module = pathlib.Path(__file__).parent.resolve()
+        params = load_params(os.path.join(path_module, 'params.yaml'))
+        params['thresholding']['use_threshold'] = False
+        params['run']['batch_size'] = config.batch_size
+        params['run']['resolution'] = config.resolution
+        coordinates_cortex = load_coordinates_from_yaml(
+            os.path.join(path_module, 'grid_coords_dipole_valid.yaml'),
+            n_coordinates=config.num_electrodes)
+        coordinates_cortex = Map(*coordinates_cortex)
+        coordinates_visual_field = \
+            get_visual_field_coordinates_from_cortex_full(
+                params['cortex_model'], coordinates_cortex)
+        self.sim = GaussianSimulator(params, coordinates_visual_field)
+
+    def forward(self, x):
+        """
+        Return phosphenes (2d) based on current stimulation and previous state.
+        """
+
+        # Need to reset for each forward pass, otherwise torch will throw an
+        # error when computing the gradient (the simulator is stateful, but
+        # each gradient computation discards the graph by default, so the next
+        # call would not find older states.) The reset here is problematic
+        # because it removes any temporal component of the phosphene model. In
+        # a supervised learning scenario, one could do a forward pass on a
+        # sequence of frames, do the backward pass, and then reset. In RL, one
+        # usually presents samples randomly. Would need to use an RL
+        # implementation for RNN policies, which train on sequences.
+        self.sim.reset()
+
+        phosphenes = self.sim(x)
+        return torch.atleast_3d(phosphenes)

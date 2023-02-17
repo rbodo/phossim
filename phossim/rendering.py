@@ -59,3 +59,24 @@ class ViewerList:
         self.stop_event.set()
         self._thread.join()
         cv2.destroyAllWindows()
+
+
+class ViewerListBlocking:
+    def __init__(self, viewers: List[Viewer]):
+        self.viewers = viewers
+
+    def render(self, info: dict) -> str:
+        for viewer in self.viewers:
+            frame = info.get(viewer.info_key, None)
+            if frame is not None:
+                viewer.render(frame)
+        key = cv2.waitKey(0)  # Wait indefinitely for user input.
+        if key != -1:  # Only store if user pressed key.
+            return chr(key)
+
+    def start(self):
+        pass
+
+    @staticmethod
+    def stop():
+        cv2.destroyAllWindows()

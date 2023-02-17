@@ -177,7 +177,7 @@ def main():
              phosphenes.basic.PhospheneSimulationConfig(phosphene_key)),
             (phosphenes.realistic.PhospheneSimulation,
              phosphenes.realistic.PhospheneSimulationConfig(
-                 phosphene_key, shape_gray, num_phosphenes))
+                 phosphene_key, shape_gray[:-1], num_phosphenes))
         ]},
         (RecordingTransform, RecordingConfig(path_recording,
                                              episode_trigger=recording_trigger,

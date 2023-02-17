@@ -1,10 +1,11 @@
-from dataclasses import dataclass, field, asdict
-from pathlib import Path
+from dataclasses import dataclass, asdict
 from typing import Optional
 
 import gym
 import numpy as np
+import torch
 import torch as th
+from torch import nn
 from torch.nn.functional import mse_loss
 from stable_baselines3 import PPO
 from stable_baselines3.common.utils import explained_variance
@@ -13,7 +14,7 @@ from stable_baselines3.common.utils import explained_variance
 @dataclass
 class TrainingConfig:
     total_timesteps: int
-    log_interval: int = 50
+    log_interval: int = 1
     tb_log_name: str = 'run'
     eval_env: Optional[gym.Env] = None
     eval_freq: int = -1
@@ -27,9 +28,127 @@ class TrainingConfig:
 
 @dataclass
 class AgentConfig:
-    path_model: Path
-    policy_id: str
-    kwargs: Optional[dict] = field(default_factory=dict)
+    encoder: nn.Module
+    decoder: nn.Module
+    phosphene_simulator: nn.Module
+    device: str
+
+
+class Encoder(nn.Module):
+    def __init__(self, num_electrodes):
+        super().__init__()
+        self.num_electrodes = num_electrodes
+        nonlinearity = nn.ReLU()
+        pool = nn.AvgPool2d(2)
+        conv_kwargs = dict(kernel_size=3, stride=1, padding=1)
+        self.layers = nn.ModuleList([
+            nn.Conv2d(1, 16, **conv_kwargs),
+            nonlinearity,
+            pool,
+            nn.Conv2d(16, 32, **conv_kwargs),
+            nonlinearity,
+            pool,
+            nn.Conv2d(32, 16, **conv_kwargs),
+            nonlinearity,
+            nn.Conv2d(16, 1, **conv_kwargs),
+            nn.Sigmoid(),
+            nn.Flatten()
+        ])
+
+    def forward(self, x):
+        for module in self.layers:
+            x = module(x)
+        return x[:, :self.num_electrodes]
+
+
+class Decoder(nn.Module):
+    def __init__(self):
+        super().__init__()
+        nonlinearity = nn.ReLU()
+        pool = nn.AvgPool2d(2)
+        conv_kwargs = dict(kernel_size=3, stride=1, padding=1)
+        self.layers = nn.ModuleList([
+            nn.Conv2d(1, 16, **conv_kwargs),
+            nonlinearity,
+            pool,
+            nn.Conv2d(16, 32, **conv_kwargs),
+            nonlinearity,
+            nn.Conv2d(32, 16, **conv_kwargs),
+            nonlinearity,
+            nn.Conv2d(16, 1, **conv_kwargs),
+            nn.Sigmoid(),
+        ])
+
+    def forward(self, x):
+        for module in self.layers:
+            x = module(x)
+        return x
+
+
+class EncoderDecoder(nn.Module):
+    def __init__(self, observation_space: gym.spaces.Space,
+                 config: AgentConfig):
+        super().__init__()
+        self.observation_space = observation_space
+        self.encoder = config.encoder
+        self.decoder = config.decoder
+        self.device = config.device
+        self.loss_function = nn.MSELoss()
+        self.reconstruction_loss = None
+        self.flatten = nn.Flatten()
+        self.features_dim = self.get_feature_dim()
+
+    def get_feature_dim(self):
+        # Get dummy input.
+        batch_size = self.phosphene_simulator.sim.batch_size
+        x = torch.zeros((batch_size,) + self.observation_space.shape,
+                        dtype=torch.float32, device=self.device)
+        # Compute model output.
+        with torch.no_grad():
+            y = self.encoder(x)
+        # Return number of neurons in output layer.
+        return np.prod(y.shape[1:])
+
+    def forward(self, x):
+        stimulus = self.encoder.forward(x)
+        decoded = self.decoder.forward(stimulus)
+        self.reconstruction_loss = self.loss_function(decoded, x)
+
+        return self.flatten(stimulus)
+
+
+class PhospheneEncoderDecoder(nn.Module):
+    def __init__(self, observation_space: gym.spaces.Space,
+                 config: AgentConfig):
+        super().__init__()
+        self.phosphene_simulator = config.phosphene_simulator
+        self.observation_space = observation_space
+        self.encoder = config.encoder
+        self.decoder = config.decoder
+        self.device = config.device
+        self.loss_function = nn.MSELoss()
+        self.reconstruction_loss = None
+        self.flatten = nn.Flatten()
+        self.features_dim = self.get_feature_dim()
+
+    def get_feature_dim(self):
+        # Get dummy input.
+        batch_size = self.phosphene_simulator.sim.params['run']['batch_size']
+        x = torch.zeros((batch_size,) + self.observation_space.shape,
+                        dtype=torch.float32, device=self.device)
+        # Compute model output.
+        with torch.no_grad():
+            y = self.phosphene_simulator(self.encoder(x))
+        # Return number of neurons in output layer.
+        return np.prod(y.shape[1:])
+
+    def forward(self, x):
+        stimulus = self.encoder.forward(x)
+        phosphenes = self.phosphene_simulator(stimulus)
+        decoded = self.decoder.forward(torch.unsqueeze(phosphenes, 1))
+        self.reconstruction_loss = self.loss_function(decoded, x)
+
+        return self.flatten(phosphenes)
 
 
 class E2ePPO(PPO):
@@ -76,9 +195,8 @@ class E2ePPO(PPO):
                 values = values.flatten()
                 # Normalize advantage
                 advantages = rollout_data.advantages
-                if self.normalize_advantage:
-                    advantages = (advantages - advantages.mean()) / \
-                                 (advantages.std() + 1e-8)
+                advantages = (advantages - advantages.mean()) / \
+                             (advantages.std() + 1e-8)
 
                 # ratio between old and new policy, should be one at the
                 # first iteration
@@ -122,7 +240,11 @@ class E2ePPO(PPO):
                 loss = (policy_loss + self.ent_coef * entropy_loss +
                         self.vf_coef * value_loss)
 
-                loss = loss + self.env.venv.envs[0].reconstruction_loss
+                loss = (loss +
+                        self.policy.features_extractor.reconstruction_loss)
+                # If we had implemented the e2e encoder as an observation
+                # wrapper, would use this line:
+                # loss = loss + self.env.venv.envs[0].reconstruction_loss
 
                 # Calculate approximate form of reverse KL Divergence for
                 # early stopping see issue #417:
