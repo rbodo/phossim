@@ -6,15 +6,15 @@ from typing import Union, TYPE_CHECKING
 import gym
 from stable_baselines3.common.base_class import BaseAlgorithm
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # Safely import modules that would otherwise cause circular import errors
     from phossim.agent.human import HumanAgent
     from phossim.rendering import ViewerList, ViewerListBlocking
 
 
 class BasePipeline:
     environment: gym.Env = None
-    agent: Union[BaseAlgorithm, HumanAgent] = None
-    renderer: Union[ViewerList, ViewerListBlocking] = None
+    agent: Union[BaseAlgorithm, HumanAgent] = None  # Union specify a type as a union of multiple types
+    renderer: Union[ViewerList, ViewerListBlocking] = None  # List of frames to render, the class has methods to control flow, start and stop.
 
     def __init__(self, *args, **kwargs):
         self.max_num_episodes = kwargs.get('max_num_episodes', float('inf'))
@@ -25,6 +25,7 @@ class BasePipeline:
 
         for i_episode in count():
 
+            done = False
             key = self.run_episode()
 
             if self._is_run_done(key, i_episode):
@@ -34,7 +35,7 @@ class BasePipeline:
 
     def run_episode(self):
 
-        observation = self.environment.reset()
+        observation = self.environment.reset()  # Environment for gym
 
         while True:
 

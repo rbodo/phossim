@@ -1,3 +1,7 @@
+
+
+# export PYTHONPATH="/scratch/big/home/carsan/Internship/PyCharm_projects/Phossim"
+
 import os
 import sys
 from dataclasses import dataclass
@@ -44,8 +48,8 @@ class Pipeline(BasePipeline):
 
 
 def main():
-    os.environ['CUDA_VISIBLE_DEVICES'] = '4'
-    device = 'cuda:0'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+    device = 'cuda:1'
     input_key = 'input'
     filter_key = 'filtered_observation'
     phosphene_key = 'phosphenes'

@@ -38,13 +38,13 @@ class Pipeline(InteractivePipeline):
 
 
 def main():
-    os.environ['CUDA_VISIBLE_DEVICES'] = '4'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '5'
     device = 'cuda:0'
     input_key = 'input'
     filter_key = 'filtered_observation'
     phosphene_key = 'phosphenes'
     vr_key = 'vr_display'
-    path_base = Path('~/Data/phosphenes/aihabitat_human').expanduser()
+    path_base = Path('~/Data/phosphenes/aihabitat_ppo').expanduser()
     path_config = 'benchmark/nav/pointnav/pointnav_habitat_test.yaml'
     path_recording = path_base.joinpath('recording')
     video_length = 300
@@ -82,6 +82,7 @@ def main():
     ]
 
     action_map = {'w': HabitatSimActions.move_forward,  # 1
+                  #'s': HabitatSimActions.move_backward, # 4
                   'a': HabitatSimActions.turn_left,  # 2
                   'd': HabitatSimActions.turn_right}  # 3
     agent_config = HumanAgentConfig(

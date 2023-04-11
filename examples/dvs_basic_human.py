@@ -34,7 +34,7 @@ class Pipeline(BasePipeline):
 
 
 def main():
-    os.environ['CUDA_VISIBLE_DEVICES'] = '4'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '2'
     device = 'cuda:0'
     input_key = 'input'
     phosphene_key = 'phosphenes'

@@ -1,9 +1,11 @@
-gym
+gym~=0.21.0
 ale-py
 autorom[accept-rom-license]
 stable_baselines3
-opencv-python
+opencv-python~=4.7.0.72
 tensorboard
-torch
-dv
-dynaphos
+torch~=1.13.1
+dv~=1.0.11
+dynaphos~=0.1.1
+
+numpy~=1.20.3

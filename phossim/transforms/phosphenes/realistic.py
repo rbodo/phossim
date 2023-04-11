@@ -13,6 +13,7 @@ from dynaphos.cortex_models import \
 from dynaphos.simulator import GaussianSimulator
 from dynaphos.utils import (load_params, to_numpy, load_coordinates_from_yaml,
                             Map)
+# Dynaphos is a library developed in Neural Coding lab, check paper and git repository.
 
 from phossim.transforms.common import Transform, TransformConfig
 
@@ -29,10 +30,10 @@ class PhospheneSimulationConfig(TransformConfig):
 
 class PhospheneSimulation(Transform):
     def __init__(self, env: gym.Env, config: PhospheneSimulationConfig):
-        super().__init__(env, config)
+        super().__init__(env, config)  # init Transform class, which initialize gym.ObservationWrapper with env
 
         self._observation_space = gym.spaces.Box(
-            low=0, high=255, shape=config.resolution, dtype=np.uint8)
+            low=0, high=255, shape=config.resolution + (1,), dtype=np.uint8)
         path_module = pathlib.Path(__file__).parent.resolve()
         params = load_params(os.path.join(path_module, 'params.yaml'))
         params['thresholding']['use_threshold'] = False

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass  # way to define classes that primarily store data using the decorator @dataclass
 from threading import Thread, Event
 from typing import List
 
@@ -6,13 +6,13 @@ import cv2
 import numpy as np
 
 
-@dataclass
+@dataclass  # Class to store data
 class ViewerConfig:
     info_key: str
     name: str
 
 
-class Viewer:
+class Viewer:  # Displays 1 video frame
     def __init__(self, config: ViewerConfig):
         self.name = config.name
         self.info_key = config.info_key
@@ -21,24 +21,24 @@ class Viewer:
         cv2.imshow(self.name, frame)
 
 
-class ViewerList:
+class ViewerList:  # Displays sequences of video frames
     def __init__(self, viewers: List[Viewer]):
         self.viewers = viewers
-        self._thread = Thread(target=self._render, name='viewer')
+        self._thread = Thread(target=self._render, name='viewer')  # Allows you to run multiple threads simultaneously
         self._info = {}
         self.key = None
         self.read_event = Event()
         self.stop_event = Event()
 
     def _render(self):
-        while not self.stop_event.is_set():
-            key = cv2.waitKey(1)  # in ms.
+        while not self.stop_event.is_set():  # While event is still running (in wait)
+            key = cv2.waitKey(1)  # in ms. Reading navigation
             if key != -1:   # Only store if user pressed key.
                 self.key = chr(key)
             if self.read_event.is_set():
                 self.read_event.clear()
                 for viewer in self.viewers:
-                    frame = self._info.get(viewer.info_key, None)
+                    frame = self._info.get(viewer.info_key, None)  # Look for an specific key in the dictionary
                     if frame is not None:
                         viewer.render(frame)
 

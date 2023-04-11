@@ -49,7 +49,7 @@ class Aihabitat(gym.Env):
 
 
 def get_reward(observations):
-    return observations['pointgoal_with_gps_compass'][0] < 0.2
+    return observations['pointgoal_with_gps_compass'][0] < 2
 
 
 def print_state(observations):
