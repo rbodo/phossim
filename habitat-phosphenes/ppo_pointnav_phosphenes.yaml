@@ -1,0 +1,96 @@
+# Note:  This is an example config, see habitat_baselines/config/pointnav/ppo_pointnav.yaml
+# for better hyperparameters for actual training
+
+defaults: # From habitat-baselines/habitat-baselines/config/pointnav/ppo_pointnav.yaml
+  - /benchmark/nav/pointnav: pointnav_gibson
+  - /habitat_baselines: habitat_baselines_rl_config_base
+  - _self_
+
+#defaults: # From habitat-lab/habitat/config/benchmark/nav/pointnav/pointnav_gibson.yaml
+#  - pointnav_base
+#  - /habitat/dataset/pointnav: gibson
+#  - _self_q
+
+# What is this?? It was in previous config file
+#BASE_TASK_CONFIG_PATH: "configs/tasks/pointnav_gibson.yaml"
+#ENV_NAME: "NavRLEnv"
+#SENSORS: ["RGB_SENSOR"]
+
+#No needed because it's already in pointnav_gibson
+#habitat:
+#  environment:
+#    max_episode_steps: 500
+#  simulator:
+#    agents:
+#      main_agent:
+#        sim_sensors:
+#          rgb_sensor:
+#            width: 256
+#            height: 256
+#          depth_sensor:
+#            width: 256
+#            height: 256
+#  seed: 5
+
+habitat_baselines:
+  verbose: False
+  trainer_name: "ppo"
+#  simulator_gpu_id: 5
+  torch_gpu_id: 0  # It is relative index (relative to the specified visible devices)
+  tensorboard_dir: "/home/carsan/Data/phosphenes/habitat/tb/phosphenes"
+  video_dir: "/home/carsan/Data/phosphenes/habitat/videos/phosphenes"
+  test_episode_count: 5 # To evaluate on all episodes, set this to -1
+  eval_ckpt_path_dir: "/home/carsan/Data/phosphenes/habitat/checkpoints/phosphenes/ckpt.0.pth"
+  num_environments: 6  # Ideally a multiple of the number of batches
+  checkpoint_folder: "/home/carsan/Data/phosphenes/habitat/checkpoints/phosphenes"
+  total_num_steps: 1e5 # Original 1e6
+  num_updates: -1
+  log_interval: 25
+  num_checkpoints: 100
+  # Force PyTorch to be single threaded as this improves performance considerably
+  force_torch_single_threaded: True
+
+  eval:
+#    video_option: [ ]
+    # Can be uncommented to generate videos.
+    video_option: ["disk", "tensorboard"]
+
+  rl:
+    ppo:
+      # ppo params
+      clip_param: 0.2
+      ppo_epoch: 4
+      num_mini_batch: 2  # Ideally a factor of number of environments
+      value_loss_coef: 0.5
+      entropy_coef: 0.01
+      lr: 2.5e-4
+      eps: 1e-5
+      max_grad_norm: 0.5
+      num_steps: 128
+      hidden_size: 512
+      use_gae: True
+      gamma: 0.99
+      tau: 0.95
+      use_linear_clip_decay: True
+      use_linear_lr_decay: True
+      reward_window_size: 50
+
+      # Use double buffered sampling, typically helps
+      # when environment time is similar or larger than
+      # policy inference time during rollout generation
+      use_double_buffered_sampler: False
+#    ddppo:
+#      reset_critic: False
+#      pretrained: True
+#      pretrained_weights: "data/checkpoints/gibson-rgb-best.pth"
+#    policy:
+#      obs_transforms:
+#        enabled_transforms: [GrayScale, EdgeFilter, Phosphenes]
+#        edge_filter:
+#          sigma: 3
+#          threshold_low: 20
+#          threshold_high: 40
+#        phosphenes:
+#          size: [256, 256]
+#          resolution: 32
+#          sigma: 2

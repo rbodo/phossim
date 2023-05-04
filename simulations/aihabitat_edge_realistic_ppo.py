@@ -108,6 +108,15 @@ def main():
     pipeline.agent.save(config.agent_config.path_model)
 
     pipeline.run()
+    pipeline = Pipeline(config)
+
+    training_config = TrainingConfig(int(1e1))
+    pipeline.agent.learn(**training_config.asdict())
+    pipeline.agent.save(config.agent_config.path_model)
+
+    pipeline.run()
+
+
 
 
 if __name__ == '__main__':

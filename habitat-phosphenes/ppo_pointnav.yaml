@@ -1,0 +1,57 @@
+# Note:  This is an example config, see habitat_baselines/config/pointnav/ppo_pointnav.yaml
+# for better hyperparameters for actual training
+
+VERBOSE: False
+
+BASE_TASK_CONFIG_PATH: "configs/tasks/pointnav_gibson.yaml"
+TRAINER_NAME: "ppo"
+ENV_NAME: "NavRLEnv"
+SIMULATOR_GPU_ID: 4
+TORCH_GPU_ID: 4
+VIDEO_OPTION: ["disk", "tensorboard"]
+TENSORBOARD_DIR: "/home/bodrue/Data/phosphenes/habitat/tb/rgb"
+VIDEO_DIR: "/home/bodrue/Data/phosphenes/habitat/videos/rgb"
+# To evaluate on all episodes, set this to -1
+TEST_EPISODE_COUNT: 5
+EVAL_CKPT_PATH_DIR: "data/checkpoints/gibson-rgb-best.pth"
+NUM_ENVIRONMENTS: 6
+SENSORS: ["RGB_SENSOR"]
+CHECKPOINT_FOLDER: "/home/bodrue/Data/phosphenes/habitat/checkpoints/rgb"
+NUM_UPDATES: -1
+TOTAL_NUM_STEPS: 1e6
+LOG_INTERVAL: 25
+NUM_CHECKPOINTS: 100
+# Force PyTorch to be single threaded as
+# this improves performance considerably
+FORCE_TORCH_SINGLE_THREADED: True
+
+EVAL:
+  USE_CKPT_CONFIG: False
+
+RL:
+  PPO:
+    # ppo params
+    clip_param: 0.2
+    ppo_epoch: 4
+    num_mini_batch: 2
+    value_loss_coef: 0.5
+    entropy_coef: 0.01
+    lr: 1e-4
+    eps: 1e-5
+    max_grad_norm: 0.5
+    num_steps: 128
+    hidden_size: 512
+    use_gae: True
+    gamma: 0.99
+    tau: 0.95
+    use_linear_clip_decay: True
+    use_linear_lr_decay: True
+    reward_window_size: 50
+    # Use double buffered sampling, typically helps
+    # when environment time is similar or large than
+    # policy inference time during rollout generation
+    use_double_buffered_sampler: False
+  DDPPO:
+    reset_critic: False
+    pretrained: True
+    pretrained_weights: "data/checkpoints/gibson-rgb-best.pth"
