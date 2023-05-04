@@ -1,3 +1,4 @@
+import habitat # To avoid the problem with libllvmlite
 import os
 
 import sys
@@ -9,7 +10,7 @@ import phosphenes
 
 def main():
 
-    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '5'
 
     os.chdir(Path('~/Internship/PyCharm_projects/habitat-lab/').expanduser())
 
