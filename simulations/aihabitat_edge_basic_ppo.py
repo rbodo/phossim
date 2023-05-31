@@ -34,12 +34,12 @@ class Pipeline(BasePipeline):
         super().__init__()
         self.environment = Aihabitat(config.environment_config)
         self.environment = wrap_transforms(self.environment, config.transforms)
-        self.renderer = ViewerList(config.displays)
         self.agent = get_agent(self.environment, config.agent_config)
+        self.renderer = ViewerList(config.displays)
 
 
 def main():
-    os.environ['CUDA_VISIBLE_DEVICES'] = '5'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     device = 'cuda:0'
     input_key = 'input'
     filter_key = 'filtered_observation'
@@ -101,7 +101,7 @@ def main():
 
     pipeline = Pipeline(config)
 
-    training_config = TrainingConfig(int(1e1))
+    training_config = TrainingConfig(int(1e2))
     pipeline.agent.learn(**training_config.asdict())
     pipeline.agent.save(config.agent_config.path_model)
 
@@ -112,7 +112,7 @@ def main():
 if __name__ == '__main__':
     os.chdir('/scratch/big/home/carsan/Internship/PyCharm_projects/habitat-lab')
     sys.path.append('/scratch/big/home/carsan/Internship/PyCharm_projects/Phossim')
-    display_address = os.environ['DISPLAY']
+    # display_address = os.environ['DISPLAY']
 
 
     main()

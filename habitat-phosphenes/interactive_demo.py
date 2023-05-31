@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 
 import habitat
-from habitat import Config
+from habitat import get_config
 from habitat.core import spaces
 from habitat.sims.habitat_simulator.actions import HabitatSimActions
 from habitat_baselines.common.obs_transformers import ObservationTransformer
@@ -48,7 +48,7 @@ class GrayScale(ObservationTransformer):
         return observation_space
 
     @classmethod
-    def from_config(cls, config: Config):
+    def from_config(cls, config: get_config):
         return cls()
 
 
@@ -78,7 +78,7 @@ class Rescale(ObservationTransformer):
         return observation_space
 
     @classmethod
-    def from_config(cls, config: Config):
+    def from_config(cls, config: get_config):
         return cls(config.shape)
 
 
@@ -106,7 +106,7 @@ class EdgeFilter(ObservationTransformer):
         return cv2.Canny(observation, self.threshold_low, self.threshold_high)
 
     @classmethod
-    def from_config(cls, config: Config):
+    def from_config(cls, config: get_config):
         c = config.RL.POLICY.OBS_TRANSFORMS.EDGE_FILTER
         return cls(c.SIGMA, c.THRESHOLD_LOW, c.THRESHOLD_HIGH)
 
@@ -129,7 +129,7 @@ class Phosphenes(ObservationTransformer):
                                                          (aperture, aperture))
 
     @classmethod
-    def from_config(cls, config: Config):
+    def from_config(cls, config: get_config):
         c = config.RL.POLICY.OBS_TRANSFORMS.PHOSPHENES
         return cls(c.SIZE, c.RESOLUTION, c.SIGMA)
 
@@ -155,7 +155,8 @@ def transform_rgb_bgr(observation):
 
 
 def example():
-    config = habitat.get_config("configs/tasks/pointnav_gibson.yaml")
+    # config = habitat.get_config("habitat-lab/habitat/config/benchmark/nav/pointnav/pointnav_gibson.yaml")
+    config = habitat.get_config("benchmark/nav/pointnav/pointnav_habitat_test.yaml")
     config.defrost()
     config['DATASET']['SPLIT'] = 'val'
     config.freeze()
@@ -226,6 +227,7 @@ def example():
 
 
 if __name__ == "__main__":
-    os.chdir(Path('~/PycharmProjects/habitat-lab/').expanduser())
+    os.environ['CUDA_VISIBLE_DEVICES'] = '8'
+    os.chdir(Path('~/Internship/PyCharm_projects/habitat-lab/').expanduser())
     example()
     sys.exit()

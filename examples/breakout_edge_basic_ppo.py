@@ -38,18 +38,21 @@ class Pipeline(BasePipeline):
 
 
 def main():
-    os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     device = 'cuda:0'
     input_key = 'input'
     filter_key = 'filtered_observation'
     phosphene_key = 'phosphenes'
+
     path_base = Path('~/Data/phosphenes/atari').expanduser()
     path_recording = path_base.joinpath('recording')
     path_tensorboard = path_base.joinpath('log')
     path_model = path_base.joinpath('models/PPO_breakout')
     path_model.parent.mkdir(exist_ok=True)
+
     video_length = 300
-    def recording_trigger(episode): return episode % 10000 == 0
+
+    def recording_trigger(episode): return episode % 1000 == 0
 
     environment_config = AtariConfig(
         GymConfig('ALE/Breakout-v5',
@@ -95,7 +98,7 @@ def main():
 
     pipeline = Pipeline(config)
 
-    training_config = TrainingConfig(int(1e7))
+    training_config = TrainingConfig(int(1e2))
     pipeline.agent.learn(**training_config.asdict())
     pipeline.agent.save(config.agent_config.path_model)
 

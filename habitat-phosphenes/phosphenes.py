@@ -65,6 +65,7 @@ class GrayScale(ObservationTransformer):
 
     @classmethod
     def from_config(cls, config: get_config):
+        # c = config.rl.policy.obs_transform.GrayScale
         return cls()
 
 
@@ -122,8 +123,7 @@ class EdgeFilter(ObservationTransformer):
 
     @classmethod
     def from_config(cls, config: get_config):
-        c = config.RL.POLICY.OBS_TRANSFORMS.EDGE_FILTER
-        return cls(c.SIGMA, c.THRESHOLD_LOW, c.THRESHOLD_HIGH)
+        return cls(config.sigma, config.threshold_low, config.threshold_high)
 
 
 @baseline_registry.register_obs_transformer()
@@ -146,8 +146,7 @@ class Phosphenes(ObservationTransformer):
 
     @classmethod
     def from_config(cls, config: get_config):
-        c = config.RL.POLICY.OBS_TRANSFORMS.PHOSPHENES
-        return cls(c.SIZE, c.RESOLUTION, c.SIGMA)
+        return cls(config.size, config.resolution, config.sigma)
 
     def forward(self, observations: Dict[str, torch.Tensor]
                 ) -> Dict[str, torch.Tensor]:

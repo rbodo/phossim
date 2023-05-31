@@ -37,11 +37,11 @@ habitat_baselines:
   trainer_name: "ppo"
 #  simulator_gpu_id: 5
   torch_gpu_id: 0  # It is relative index (relative to the specified visible devices)
-  tensorboard_dir: "/home/carsan/Data/phosphenes/habitat/tb/phosphenes"
+  tensorboard_dir: "/home/carsan/Data/phosphenes/habitat/tb/phosphenes/run1e4"
   video_dir: "/home/carsan/Data/phosphenes/habitat/videos/phosphenes"
   test_episode_count: 5 # To evaluate on all episodes, set this to -1
   eval_ckpt_path_dir: "/home/carsan/Data/phosphenes/habitat/checkpoints/phosphenes/ckpt.0.pth"
-  num_environments: 6  # Ideally a multiple of the number of batches
+  num_environments: 8  # Ideally a multiple of the number of batches (original 6)
   checkpoint_folder: "/home/carsan/Data/phosphenes/habitat/checkpoints/phosphenes"
   total_num_steps: 1e5 # Original 1e6
   num_updates: -1
@@ -58,8 +58,8 @@ habitat_baselines:
   rl:
     ppo:
       # ppo params
-      clip_param: 0.2
-      ppo_epoch: 4
+      clip_param: 0.5  # Original 0.2
+      ppo_epoch: 6  # Original 4
       num_mini_batch: 2  # Ideally a factor of number of environments
       value_loss_coef: 0.5
       entropy_coef: 0.01
@@ -79,18 +79,18 @@ habitat_baselines:
       # when environment time is similar or larger than
       # policy inference time during rollout generation
       use_double_buffered_sampler: False
-#    ddppo:
-#      reset_critic: False
-#      pretrained: True
-#      pretrained_weights: "data/checkpoints/gibson-rgb-best.pth"
-#    policy:
-#      obs_transforms:
-#        enabled_transforms: [GrayScale, EdgeFilter, Phosphenes]
-#        edge_filter:
-#          sigma: 3
-#          threshold_low: 20
-#          threshold_high: 40
-#        phosphenes:
-#          size: [256, 256]
-#          resolution: 32
-#          sigma: 2
+    ddppo:
+      reset_critic: False
+      pretrained: True
+      pretrained_weights: "data/checkpoints/gibson-rgb-best.pth"
+    policy:
+      obs_transforms:
+        enabled_transforms: [GrayScale, EdgeFilter, Phosphenes]
+        edge_filter:
+          sigma: 3
+          threshold_low: 20
+          threshold_high: 40
+        phosphenes:
+          size: [256, 256]
+          resolution: 32
+          sigma: 2

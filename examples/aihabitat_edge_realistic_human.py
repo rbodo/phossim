@@ -38,17 +38,17 @@ class Pipeline(InteractivePipeline):
 
 
 def main():
-    os.environ['CUDA_VISIBLE_DEVICES'] = '5'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     device = 'cuda:0'
     input_key = 'input'
     filter_key = 'filtered_observation'
     phosphene_key = 'phosphenes'
     vr_key = 'vr_display'
-    path_base = Path('~/Data/phosphenes/aihabitat_ppo').expanduser()
+    path_base = Path('~/Data/phosphenes/aihabitat_human').expanduser()
     path_config = 'benchmark/nav/pointnav/pointnav_habitat_test.yaml'
     path_recording = path_base.joinpath('recording')
     video_length = 300
-    def recording_trigger(episode): return episode % 10000 == 0
+    def recording_trigger(episode): return episode % 1 == 0
 
     num_phosphenes = 256
     shape_in = (128, 128, 3)
@@ -92,7 +92,7 @@ def main():
         Viewer(ViewerConfig(input_key, 'aihabitat')),
         Viewer(ViewerConfig(filter_key, 'canny')),
         Viewer(ViewerConfig(phosphene_key, 'basic')),
-        Viewer(ViewerConfig(vr_key, 'vr_display'))
+        # Viewer(ViewerConfig(vr_key, 'vr_display'))
     ]
 
     config = Config(environment_config,

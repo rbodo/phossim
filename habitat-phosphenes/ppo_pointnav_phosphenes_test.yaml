@@ -1,0 +1,82 @@
+defaults:
+#  - _self_
+  - /benchmark/nav/pointnav: pointnav_gibson
+  - /habitat_baselines: habitat_baselines_rl_config_base
+  - /habitat_baselines/rl/policy/obs_transforms:
+    - edge_filter_base
+    - phosphenes_vision_base
+    - gray_scale_base
+  - _self_
+
+#habitat:
+#  environment:
+#    max_episode_steps: 500
+#  simulator:
+#    agents:
+#      main_agent:
+#        sim_sensors:
+#          rgb_sensor:
+#            width: 256
+#            height: 256
+#          depth_sensor:
+#            width: 256
+#            height: 256
+
+habitat_baselines:
+  checkpoint_folder: /home/carsan/Data/phosphenes/habitat/checkpoints/phosphenes
+  eval:
+    video_option:
+    - disk
+#    - tensorboard
+  eval_ckpt_path_dir: /home/carsan/Data/phosphenes/habitat/checkpoints/phosphenes/ckpt.0.pth
+  force_torch_single_threaded: true
+  log_interval: 25
+  num_checkpoints: 100
+  num_environments: 8
+  num_updates: -1
+  rl:
+    ppo:
+      clip_param: 0.2
+      entropy_coef: 0.01
+      eps: 1e-5
+      gamma: 0.99
+      hidden_size: 512
+      lr: 0.00025
+      max_grad_norm: 0.5
+      num_mini_batch: 2
+      num_steps: 128
+      ppo_epoch: 4
+      reward_window_size: 50
+      tau: 0.95
+      use_double_buffered_sampler: false
+      use_gae: true
+      use_linear_clip_decay: true
+      use_linear_lr_decay: true
+      value_loss_coef: 0.5
+    ddppo:
+      reset_critic: False
+      pretrained: False
+#      pretrained_weights: "data/checkpoints/gibson-rgb-best.pth"
+    policy:
+      obs_transforms:
+        gray_scale:
+          type: "GrayScale"
+        edge_filter:
+          type: "EdgeFilter"
+          sigma: 3
+          threshold_low: 20
+          threshold_high: 40
+        phosphenes_vision:
+          type: "Phosphenes"
+          size: [256, 256]
+#          - 256 # The first run config was generated like this
+#          - 256
+          resolution: 32
+          sigma: 2
+  tensorboard_dir: /home/carsan/Data/phosphenes/habitat/tb/phosphenes/phosphene_vision_run1
+  test_episode_count: 5
+  torch_gpu_id: 0
+  total_num_steps: 1e3
+  trainer_name: ppo
+  verbose: false
+  video_dir: /home/carsan/Data/phosphenes/habitat/videos/phosphenes
