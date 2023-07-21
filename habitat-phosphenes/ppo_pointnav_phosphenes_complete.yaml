@@ -4,7 +4,7 @@ habitat:
     - '*'
     data_path: data/datasets/pointnav/gibson/v1/{split}/{split}.json.gz
     scenes_dir: data/scene_datasets
-    split: train
+    split: train  # train or val (default to train)
     type: PointNav-v1
   env_task: GymHabitatEnv
   env_task_gym_dependencies: []
@@ -24,7 +24,10 @@ habitat:
     achieved_goal_keys: []
     action_keys: null
     desired_goal_keys: []
-    obs_keys: null
+    obs_keys:  # null  # Default to null (without the rgb and depth lines)
+      - rgb
+      - depth
+#      - pointgoal_with_gps_compass
   seed: 100
   simulator:
     ac_freq_ratio: 4
@@ -42,7 +45,7 @@ habitat:
         joint_start_noise: 0.1
         motion_data_path: ''
         radius: 0.1
-        sim_sensors:
+        sim_sensors: # also semantic sensor, force, torque, etc.
           depth_sensor:
             height: 256
             hfov: 90
@@ -90,11 +93,11 @@ habitat:
     agents_order:
     - main_agent
     auto_sleep: false
-    concur_render: false
-    create_renderer: false
+    concur_render: false     # FOR RENDERING??? (true for rendering?)(originally set to false)
+    create_renderer: false   # FOR RENDERING??? (true for rendering?)(originally set to false)
     ctrl_freq: 120.0
-    debug_render: false
-    debug_render_articulated_agent: false
+    debug_render: false      # FOR RENDERING??? (true for rendering?)(originally set to false)
+    debug_render_articulated_agent: true
     debug_render_goal: true
     default_agent_id: 0
     ep_info: null
@@ -116,7 +119,7 @@ habitat:
     object_ids_start: 100
     requires_textures: true
     robot_joint_start_noise: 0.0
-    scene: data/scene_datasets/habitat-test-scenes/van-gogh-room.glb
+    scene: data/scene_datasets/habitat-test-scenes/van-gogh-room.glb  # When is this used???
     scene_dataset: default
     seed: 100
     step_physics: true
@@ -155,13 +158,21 @@ habitat:
     end_on_success: true
     filter_nav_to_tasks: []
     force_regenerate: false
-    goal_sensor_uuid: pointgoal_with_gps_compass
+    goal_sensor_uuid: pointgoal_with_gps_compass # HabitatSimRGBSensor # pointgoal_with_gps_compass
     joint_max_impulse: -1.0
-    lab_sensors:
+    lab_sensors: # {}
       pointgoal_with_gps_compass_sensor:
         dimensionality: 2
         goal_format: POLAR
         type: PointGoalWithGPSCompassSensor
+#      rgb_sensor:
+#        height: 256
+#        width: 256
+#        hfov: 90
+#        position: [ 0.0, 1.25, 0.0 ]
+#        orientation: [ 0.0, 0.0, 0.0 ]
+#        sensor_subtype: PINHOLE
+#        type: HabitatSimRGBSensor
     measurements:
       distance_to_goal:
         distance_to: POINT
@@ -196,7 +207,7 @@ habitat:
     type: Nav-v0
     use_marker_t: true
 habitat_baselines:
-  checkpoint_folder: /home/carsan/Data/phosphenes/habitat/checkpoints/phosphenes
+  checkpoint_folder: /home/carsan/Data/phosphenes/habitat/checkpoints/train_NPT_GPSRGB_3transf  # in eval same as eval_ckpt_path_dir
   checkpoint_interval: -1
   distrib_updater_name: DDPPO
   eval:
@@ -208,18 +219,18 @@ habitat_baselines:
     video_option:
       - disk
       - tensorboard
-  eval_ckpt_path_dir: /home/carsan/Data/phosphenes/habitat/checkpoints/phosphenes/ckpt.0.pth
+  eval_ckpt_path_dir: /home/carsan/Data/phosphenes/habitat/checkpoints/train_NPT_GPSRGB_3transf # data/ddppo-models/ # ''
   eval_keys_to_include_in_name: []
   evaluate: false
   force_blind_policy: false
   force_torch_single_threaded: true #
-  load_resume_state_config: true
+  load_resume_state_config: false #
   log_file: train.log
   log_interval: 25 #
   num_checkpoints: 100 #
-  num_environments: 8 #
+  num_environments: 8 # ##########
   num_processes: -1
-  num_updates: 10000 # -1
+  num_updates: -1 # -1 (default to 10000)
   profiling:
     capture_start_step: -1
     num_steps_to_capture: -1
@@ -232,9 +243,9 @@ habitat_baselines:
       distrib_backend: GLOO
       force_distributed: false
       num_recurrent_layers: 1
-      pretrained: false
-      pretrained_encoder: false
-      pretrained_weights: data/ddppo-models/gibson-2plus-resnet50.pth
+      pretrained: false # default to false
+      pretrained_encoder: false # default to false
+      pretrained_weights: data/ddppo-models/gibson-2plus-resnet50.pth # data/ #
       reset_critic: false
       rnn_type: GRU
       sync_frac: 0.6
@@ -256,7 +267,7 @@ habitat_baselines:
       action_distribution_type: categorical
       hierarchical_policy: ???
       name: PointNavResNetPolicy
-      obs_transforms: #
+      obs_transforms:  # {} # Maybe empty dict?
         gray_scale:
           type: "GrayScale"
         edge_filter:
@@ -278,7 +289,7 @@ habitat_baselines:
       hidden_size: 512 #
       lr: 0.00025 #
       max_grad_norm: 0.5 #
-      num_mini_batch: 2 #
+      num_mini_batch: 2 # ##################
       num_steps: 128 #
       ppo_epoch: 4 #
       reward_window_size: 50 #
@@ -300,14 +311,14 @@ habitat_baselines:
       overlap_rollouts_and_learn: false
       variable_experience: true
   rollout_storage_name: RolloutStorage
-  tensorboard_dir: /home/carsan/Data/phosphenes/habitat/tb/phosphenes/video_reocrding_attempts
+  tensorboard_dir: /home/carsan/Data/phosphenes/habitat/tb/train_NPT_GPSRGB_3transf
   test_episode_count: 5 #
   torch_gpu_id: 0
-  total_num_steps: -1 # -1 = around 800,000 steps
+  total_num_steps: 2800000 # (-1 if num_updates is specified)
   trainer_name: ppo
   updater_name: PPO
   verbose: false
-  video_dir: /home/carsan/Data/phosphenes/habitat/videos/phosphenes
+  video_dir: /home/carsan/Data/phosphenes/habitat/videos/train_NPT_GPSRGB_3transf
   video_fps: 10
   wb:
     entity: ''

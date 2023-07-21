@@ -42,7 +42,17 @@ class GrayScale(ObservationTransformer):
 
         frames = []
         for frame in observation:
+            # Render the image
+            # cv2.waitKey(1)
+            # cv2.imshow("Before processing", frame)
+            # cv2.waitKey(1)
+
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+            # Render the image
+            # cv2.waitKey(1)
+            # cv2.imshow("Gray Scale", frame)
+            # cv2.waitKey(1)
 
             frames.append(frame)
 
@@ -100,6 +110,11 @@ class EdgeFilter(ObservationTransformer):
             # Canny edge detection.
             frame = cv2.Canny(frame, self.threshold_low, self.threshold_high)
 
+            # Render the image
+            # cv2.waitKey(1)
+            # cv2.imshow("Edges", frame)
+            # cv2.waitKey(1)
+
             # Copy grayscale image on each RGB channel so we can reuse
             # pre-trained net.
             # frames.append(np.tile(np.expand_dims(frame, -1), 3))
@@ -130,6 +145,8 @@ class EdgeFilter(ObservationTransformer):
 class Phosphenes(ObservationTransformer):
     def __init__(self, size, phosphene_resolution, sigma):
         super().__init__()
+        self.size = size
+        self.phosphene_resolution = phosphene_resolution
         self.sigma = sigma
         jitter = 0.4
         intensity_var = 0.8
@@ -170,6 +187,11 @@ class Phosphenes(ObservationTransformer):
             # pre-trained net.
             phosphenes = 255 * phosphenes / (phosphenes.max() or 1)
             frames.append(np.tile(np.expand_dims(phosphenes, -1), 3))
+
+            # Render the image
+            # cv2.waitKey(1)
+            # cv2.imshow("Phosphenes", phosphenes)
+            # cv2.waitKey(1)
 
         phosphenes = torch.as_tensor(np.array(frames, 'uint8'), device=device)
 

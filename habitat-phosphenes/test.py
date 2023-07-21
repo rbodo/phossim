@@ -35,7 +35,7 @@ def repeat_process():
 
 def main():
     # DISPLAY =:11.0
-    os.environ['CUDA_VISIBLE_DEVICES'] = '9'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
     os.chdir(Path('~/Internship/PyCharm_projects/habitat-lab/').expanduser())
 
@@ -50,7 +50,7 @@ def main():
     # with open(path_config2, "w") as f:
     #     yaml.dump(config_dict, f)
 
-    execute_exp(_config, 'train')
+    execute_exp(_config, 'train') #train or eval
 
 
 if __name__ == '__main__':
