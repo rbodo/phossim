@@ -35,7 +35,7 @@ def repeat_process():
 
 def main():
     # DISPLAY =:11.0
-    os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '5'
 
     os.chdir(Path('~/Internship/PyCharm_projects/habitat-lab/').expanduser())
 

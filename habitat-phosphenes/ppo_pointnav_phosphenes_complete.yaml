@@ -2,10 +2,12 @@ habitat:
   dataset:
     content_scenes:
     - '*'
-    data_path: data/datasets/pointnav/gibson/v1/{split}/{split}.json.gz
+    data_path: data/datasets/pointnav/gibson/v1/{split}/{split}.json.gz # (Original)
+#    data_path: data/scene_datasets/gibson/Adrian.glb
     scenes_dir: data/scene_datasets
     split: train  # train or val (default to train)
-    type: PointNav-v1
+    type: PointNav-v1  #(Original)
+#    type: Gibson
   env_task: GymHabitatEnv
   env_task_gym_dependencies: []
   env_task_gym_id: ''
@@ -27,7 +29,7 @@ habitat:
     obs_keys:  # null  # Default to null (without the rgb and depth lines)
       - rgb
       - depth
-#      - pointgoal_with_gps_compass
+      - pointgoal_with_gps_compass
   seed: 100
   simulator:
     ac_freq_ratio: 4
@@ -165,14 +167,7 @@ habitat:
         dimensionality: 2
         goal_format: POLAR
         type: PointGoalWithGPSCompassSensor
-#      rgb_sensor:
-#        height: 256
-#        width: 256
-#        hfov: 90
-#        position: [ 0.0, 1.25, 0.0 ]
-#        orientation: [ 0.0, 0.0, 0.0 ]
-#        sensor_subtype: PINHOLE
-#        type: HabitatSimRGBSensor
+#      pointgoal:
     measurements:
       distance_to_goal:
         distance_to: POINT
@@ -184,6 +179,23 @@ habitat:
         type: Success
       spl:
         type: SPL
+      top_down_map:
+        type: TopDownMap
+        map_padding: 3
+        map_resolution: 1024
+        draw_source: True
+        draw_border: True
+        draw_shortest_path: True
+        draw_view_points: True
+        draw_goal_positions: True
+        draw_goal_aabbs: True
+        max_episode_steps: 500 #
+        fog_of_war:
+          draw: True
+          visibility_dist: 5.0
+          fov: 90
+      collisions:
+        type: Collisions
     min_start_distance: 3.0
     num_spawn_attempts: 200
     obj_succ_thresh: 0.3
@@ -207,19 +219,19 @@ habitat:
     type: Nav-v0
     use_marker_t: true
 habitat_baselines:
-  checkpoint_folder: /home/carsan/Data/phosphenes/habitat/checkpoints/train_NPT_GPSRGB_3transf  # in eval same as eval_ckpt_path_dir
+  checkpoint_folder: /home/carsan/Data/phosphenes/habitat/checkpoints/debug_error  # in eval same as eval_ckpt_path_dir
   checkpoint_interval: -1
   distrib_updater_name: DDPPO
   eval:
     evals_per_ep: 1
-    extra_sim_sensors: {}
+    extra_sim_sensors: {} # ???
     should_load_ckpt: true
     split: val
     use_ckpt_config: true
     video_option:
       - disk
       - tensorboard
-  eval_ckpt_path_dir: /home/carsan/Data/phosphenes/habitat/checkpoints/train_NPT_GPSRGB_3transf # data/ddppo-models/ # ''
+  eval_ckpt_path_dir: /home/carsan/Data/phosphenes/habitat/checkpoints/debug_error # data/ddppo-models/ # ''
   eval_keys_to_include_in_name: []
   evaluate: false
   force_blind_policy: false
@@ -245,7 +257,7 @@ habitat_baselines:
       num_recurrent_layers: 1
       pretrained: false # default to false
       pretrained_encoder: false # default to false
-      pretrained_weights: data/ddppo-models/gibson-2plus-resnet50.pth # data/ #
+      pretrained_weights: data/ #data/pretrained_models/gibson-rgbd-best2.pth # data/ #
       reset_critic: false
       rnn_type: GRU
       sync_frac: 0.6
@@ -267,19 +279,21 @@ habitat_baselines:
       action_distribution_type: categorical
       hierarchical_policy: ???
       name: PointNavResNetPolicy
-      obs_transforms:  # {} # Maybe empty dict?
-        gray_scale:
-          type: "GrayScale"
-        edge_filter:
-          type: "EdgeFilter"
-          sigma: 3
-          threshold_low: 20
-          threshold_high: 40
-        phosphenes_vision:
-          type: "Phosphenes"
-          size: [256, 256]
-          resolution: 32
-          sigma: 2
+      obs_transforms: {} #
+#        black_screen:
+#          type: "BlackScreen"
+#        gray_scale:
+#          type: "GrayScale"
+#        edge_filter:
+#          type: "EdgeFilter"
+#          sigma: 3
+#          threshold_low: 20
+#          threshold_high: 40
+#        phosphenes_vision:
+#          type: "Phosphenes"
+#          size: [256, 256]
+#          resolution: 32
+#          sigma: 2
     ppo:
       clip_param: 0.2 #
       entropy_coef: 0.01 #
@@ -311,14 +325,14 @@ habitat_baselines:
       overlap_rollouts_and_learn: false
       variable_experience: true
   rollout_storage_name: RolloutStorage
-  tensorboard_dir: /home/carsan/Data/phosphenes/habitat/tb/train_NPT_GPSRGB_3transf
-  test_episode_count: 5 #
+  tensorboard_dir: /home/carsan/Data/phosphenes/habitat/tb/train/debug_error
+  test_episode_count: 5 # number of evaluation episodes??? (it is written in the eval function)
   torch_gpu_id: 0
-  total_num_steps: 2800000 # (-1 if num_updates is specified)
+  total_num_steps: 28000 # (-1 if num_updates is specified) 75e6 (in the examples, optimal)
   trainer_name: ppo
   updater_name: PPO
   verbose: false
-  video_dir: /home/carsan/Data/phosphenes/habitat/videos/train_NPT_GPSRGB_3transf
+  video_dir: /home/carsan/Data/phosphenes/habitat/videos/debug_error
   video_fps: 10
   wb:
     entity: ''

@@ -232,3 +232,46 @@ def create_regular_grid(phosphene_resolution, size, jitter, intensity_var):
                 np.clip(np.round(y + deviation[1]), 0, size[1] - 1).astype(int)
             grid[rx, ry] = intensity
     return grid
+
+@baseline_registry.register_obs_transformer()
+class BlackScreen(ObservationTransformer):
+    def __init__(self):
+        super().__init__()
+        self.transformed_sensor = 'rgb'
+
+    def forward(self, observations: Dict[str, torch.Tensor]
+                ) -> Dict[str, torch.Tensor]:
+        if self.transformed_sensor in observations:
+            observations[self.transformed_sensor] = self._transform_obs(
+                observations[self.transformed_sensor])
+        return observations
+
+    @staticmethod
+    def _transform_obs(observation):
+        device = observation.device
+
+        observation = observation.cpu().numpy()
+
+        # Create a black screen of the same dimensions as the input frames
+        black_screen = np.zeros_like(observation)
+        black_screen = np.mean(black_screen, axis=3, keepdims=True)
+        observation = torch.as_tensor(black_screen, device=device)
+
+        return observation
+
+    def transform_observation_space(self, observation_space: spaces.Dict,
+                                    **kwargs):
+        key = self.transformed_sensor
+        observation_space = copy.deepcopy(observation_space)
+
+        h, w = get_image_height_width(observation_space[key],
+                                      channels_last=True)
+        new_shape = (h, w, 1)
+        observation_space[key] = overwrite_gym_box_shape(
+            observation_space[key], new_shape)
+        return observation_space
+
+    @classmethod
+    def from_config(cls, config: get_config):
+        # c = config.rl.policy.obs_transform.GrayScale
+        return cls()
