@@ -50,7 +50,7 @@ def main():
     # with open(path_config2, "w") as f:
     #     yaml.dump(config_dict, f)
 
-    execute_exp(_config, 'eval') #train or eval
+    execute_exp(_config, 'train') #train or eval
 
 
 if __name__ == '__main__':
